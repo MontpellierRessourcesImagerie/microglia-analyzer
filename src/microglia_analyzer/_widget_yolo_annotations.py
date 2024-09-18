@@ -101,7 +101,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
         h_laytout = QHBoxLayout()
         h_laytout.addWidget(self.new_name_label)
         h_laytout.addWidget(self.new_name)
-        self.apply_to_current_button = QPushButton("Apply to current layer")
+        self.apply_to_current_button = QPushButton("🎯 Rename class")
         self.apply_to_current_button.clicked.connect(self.apply_to_current)
         self.layout.addLayout(h_laytout)
         self.layout.addWidget(self.apply_to_current_button)
@@ -123,6 +123,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
         l = self.viewer.layers.selection.active
         if (l is not None) and ('face_color' in dir(l)):
             l.name = full_name
+        self.new_name.setText("")
 
     def select_sources_directory(self):
         directory = QFileDialog.getExistingDirectory(self, "Select sources directory")
@@ -221,7 +222,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
     def clear_classes_layers(self):
         for l in self.viewer.layers:
             if l.name.startswith(_CLASS_PREFIX):
-                l.data = np.zeros_like(l.data)
+                l.data = []
 
     def restore_classes_layers(self):
         if len(self.get_classes()) > 0:
