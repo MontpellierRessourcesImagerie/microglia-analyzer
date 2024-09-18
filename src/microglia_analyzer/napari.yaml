@@ -6,25 +6,14 @@ visibility: public
 categories: ["Annotation", "Segmentation", "Acquisition"]
 contributions:
   commands:
-    - id: microglia-analyzer.make_container_widget
-      python_name: microglia_analyzer:ImageThreshold
-      title: Make threshold Container widget
-    - id: microglia-analyzer.make_magic_widget
-      python_name: microglia_analyzer:threshold_magic_widget
-      title: Make threshold magic widget
-    - id: microglia-analyzer.make_function_widget
-      python_name: microglia_analyzer:threshold_autogenerate_widget
-      title: Make threshold function widget
-    - id: microglia-analyzer.make_qwidget
-      python_name: microglia_analyzer:ExampleQWidget
-      title: Make example QWidget
+    - id: microglia-analyzer.microglia_analyzer
+      python_name: microglia_analyzer._widget:MicrogliaAnalyzerWidget
+      title: Microglia Analyzer
+    - id: microglia-analyzer.yolo_annotator
+      python_name: microglia_analyzer._widget_yolo_annotations:AnnotateBoundingBoxesWidget
+      title: YOLO Annotator
   widgets:
-    - command: microglia-analyzer.make_container_widget
-      display_name: Container Threshold
-    - command: microglia-analyzer.make_magic_widget
-      display_name: Magic Threshold
-    - command: microglia-analyzer.make_function_widget
-      autogenerate: true
-      display_name: Autogenerate Threshold
-    - command: microglia-analyzer.make_qwidget
-      display_name: Example QWidget
+    - command: microglia-analyzer.microglia_analyzer
+      display_name: Microglia Analyzer
+    - command: microglia-analyzer.yolo_annotator
+      display_name: YOLO Annotator
