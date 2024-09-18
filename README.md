@@ -1,13 +1,20 @@
-# microglia-analyzer
+# Microglia Analyzer
 
-[![License MIT](https://img.shields.io/pypi/l/microglia-analyzer.svg?color=green)](https://github.com/MontpellierRessourcesImagerie/microglia-analyzer/raw/main/LICENSE)
-[![PyPI](https://img.shields.io/pypi/v/microglia-analyzer.svg?color=green)](https://pypi.org/project/microglia-analyzer)
-[![Python Version](https://img.shields.io/pypi/pyversions/microglia-analyzer.svg?color=green)](https://python.org)
-[![tests](https://github.com/MontpellierRessourcesImagerie/microglia-analyzer/workflows/tests/badge.svg)](https://github.com/MontpellierRessourcesImagerie/microglia-analyzer/actions)
-[![codecov](https://codecov.io/gh/MontpellierRessourcesImagerie/microglia-analyzer/branch/main/graph/badge.svg)](https://codecov.io/gh/MontpellierRessourcesImagerie/microglia-analyzer)
-[![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/microglia-analyzer)](https://napari-hub.org/plugins/microglia-analyzer)
+![GitHub License](https://img.shields.io/github/license/MontpellierRessourcesImagerie/microglia-analyzer)
+![Python Version](https://img.shields.io/badge/Python-3.9-blue?logo=python)
 
 A Napari plugin allowing to detect and segment microglia on fluorescent images.
+
+It consists in:
+- Detecting the microglia with a YOLOv5 model.
+- Segmenting them with a UNet model.
+- Using some morphology to extract metrics such as:
+    - The total length
+    - The length of the longest path
+    - The number of leaves
+    - The number of vertices
+    - Area of the convex hull
+    - Solidity/extent
 
 ----------------------------------
 
