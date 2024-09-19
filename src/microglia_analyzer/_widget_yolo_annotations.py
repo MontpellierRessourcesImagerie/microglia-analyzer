@@ -1,26 +1,12 @@
-from qtpy.QtWidgets import (QWidget, QVBoxLayout, QGroupBox, QRadioButton,
-                            QSpinBox, QHBoxLayout, QPushButton, QColorDialog,
-                            QFileDialog, QComboBox, QLabel, QTableWidget,
-                            QSlider, QSpinBox, QFrame, QLineEdit, QTableWidgetItem)
+from qtpy.QtWidgets import (QWidget, QVBoxLayout, QLineEdit,
+                            QHBoxLayout, QPushButton, QLabel,
+                            QFileDialog, QComboBox)
 
-from qtpy.QtCore import QThread, Qt
-
-from PyQt5.QtGui import QFont, QDoubleValidator
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QColor
-
-import napari
 from napari.utils.notifications import show_info
-from napari.utils import progress
 
 import tifffile
-import cv2
 import numpy as np
-import math
 import os
-import shutil
-import random
-import colorsys
 
 _CLASS_PREFIX = "class."
 _IMAGE_LAYER  = "Image"
@@ -220,9 +206,10 @@ class AnnotateBoundingBoxesWidget(QWidget):
         return classes
     
     def clear_classes_layers(self):
-        for l in self.viewer.layers:
-            if l.name.startswith(_CLASS_PREFIX):
-                l.data = []
+        names = [l.name for l in self.viewer.layers]
+        for n in names:
+            if n.startswith(_CLASS_PREFIX):
+                self.viewer.layers[n].data = []
 
     def restore_classes_layers(self):
         if len(self.get_classes()) > 0:
@@ -245,6 +232,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
                 opacity=0.8,
                 edge_width=3
             )
+        show_info(f"Classes restored: {classes}")
     
     def add_labels(self, data):
         shape = self.viewer.layers[_IMAGE_LAYER].data.shape
@@ -284,6 +272,13 @@ class AnnotateBoundingBoxesWidget(QWidget):
             data.setdefault(c, []).append((x, y, w, h))
         self.add_labels(data)
 
+    def deselect_all(self):
+        for l in self.viewer.layers:
+            if not l.name.startswith(_CLASS_PREFIX):
+                continue
+            l.mode = 'pan_zoom'
+            l.selected_data = set()
+
     def open_image(self):
         current_image = self.image_selector.currentText()
         if (self.sources_directory is None) or (current_image is None) or (current_image == "---") or (current_image == ""):
@@ -297,6 +292,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
             self.viewer.layers[_IMAGE_LAYER].data = data
         else:
             self.viewer.add_image(data, name=_IMAGE_LAYER)
+        self.deselect_all()
         self.restore_classes_layers()
         self.clear_classes_layers()
         if os.path.isfile(labels_path):
