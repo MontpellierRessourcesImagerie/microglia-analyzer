@@ -1,7 +1,8 @@
 # Microglia Analyzer
 
 ![GitHub License](https://img.shields.io/github/license/MontpellierRessourcesImagerie/microglia-analyzer)
-![Python Version](https://img.shields.io/badge/Python-3.9-blue?logo=python)
+![Python Version](https://img.shields.io/badge/Python-3.9|3.10|3.11-blue?logo=python)
+![Unit tests](https://img.shields.io/github/actions/workflow/status/MontpellierRessourcesImagerie/microglia-analyzer/test_and_deploy.yml?logo=pytest&label=tests)
 
 A Napari plugin allowing to detect and segment microglia on fluorescent images.
 
