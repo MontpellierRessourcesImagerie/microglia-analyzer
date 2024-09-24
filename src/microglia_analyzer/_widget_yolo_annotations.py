@@ -1,10 +1,14 @@
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QLineEdit,
                             QHBoxLayout, QPushButton, QLabel,
-                            QFileDialog, QComboBox)
+                            QFileDialog, QComboBox, QGroupBox)
 
 from napari.utils.notifications import show_info
 
-import tifffile
+# from tifffile import imread
+# EXT = ".tif"
+from cv2 import imread
+EXT = ".png"
+
 import numpy as np
 import os
 
@@ -46,57 +50,80 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.init_ui()
         self.setLayout(self.layout)
 
-    def init_ui(self):
+    def add_media_management_group_ui(self):
+        box = QGroupBox("Media management")
+        layout = QVBoxLayout()
+        box.setLayout(layout)
+
         # Label + text box for the inputs sub-folder's name:
-        self.inputs_name_label = QLabel("Inputs sub-folder name:")
+        inputs_name_label = QLabel("Inputs sub-folder name:")
         self.inputs_name = QLineEdit()
         self.inputs_name.setText("inputs")
         h_layout = QHBoxLayout()
-        h_layout.addWidget(self.inputs_name_label)
+        h_layout.addWidget(inputs_name_label)
         h_layout.addWidget(self.inputs_name)
-        self.layout.addLayout(h_layout)
+        layout.addLayout(h_layout)
 
         # Label + text box for the annotations sub-folder's name:
-        self.annotations_name_label = QLabel("Annotations sub-folder name:")
+        annotations_name_label = QLabel("Annotations sub-folder name:")
         self.annotations_name = QLineEdit()
         self.annotations_name.setText("labels")
         h_layout = QHBoxLayout()
-        h_layout.addWidget(self.annotations_name_label)
+        h_layout.addWidget(annotations_name_label)
         h_layout.addWidget(self.annotations_name)
-        self.layout.addLayout(h_layout)
+        layout.addLayout(h_layout)
 
         # Label + button to select the source directory:
         self.select_sources_directory_button = QPushButton("📂 Sources directory")
         self.select_sources_directory_button.clicked.connect(self.select_sources_directory)
-        self.layout.addWidget(self.select_sources_directory_button)
+        layout.addWidget(self.select_sources_directory_button)
+
+        self.layout.addWidget(box)
+    
+    def add_classes_management_group_ui(self):
+        box = QGroupBox("Classes management")
+        layout = QVBoxLayout()
+        box.setLayout(layout)
+
+        # Button to add a template layer:
+        self.add_template_button = QPushButton("🔖 Add class layer")
+        self.add_template_button.clicked.connect(self.add_template)
+        layout.addWidget(self.add_template_button)
+
+        # New name for the class layer + 'apply to current layer' button:
+        self.new_name = QLineEdit()
+        h_laytout = QHBoxLayout()
+        h_laytout.addWidget(self.new_name)
+        self.apply_to_current_button = QPushButton("🎯 Rename class")
+        self.apply_to_current_button.clicked.connect(self.apply_to_current)
+        h_laytout.addWidget(self.apply_to_current_button)
+        layout.addLayout(h_laytout)
+
+        self.layout.addWidget(box)
+    
+    def add_annotations_management_group_ui(self):
+        box = QGroupBox("Annotations management")
+        layout = QVBoxLayout()
+        box.setLayout(layout)
 
         # Label + combobox containing inputs list:
         self.image_selector = QComboBox()
         self.image_selector.currentIndexChanged.connect(self.open_image)
         self.image_selector.addItem("---")
-        self.layout.addWidget(self.image_selector)
-
-        # Button to add a template layer:
-        self.add_template_button = QPushButton("🔖 Add class layer")
-        self.add_template_button.clicked.connect(self.add_template)
-        self.layout.addWidget(self.add_template_button)
-
-        # New name for the class layer + 'apply to current layer' button:
-        self.new_name_label = QLabel("New class name:")
-        self.new_name = QLineEdit()
-        h_laytout = QHBoxLayout()
-        h_laytout.addWidget(self.new_name_label)
-        h_laytout.addWidget(self.new_name)
-        self.apply_to_current_button = QPushButton("🎯 Rename class")
-        self.apply_to_current_button.clicked.connect(self.apply_to_current)
-        self.layout.addLayout(h_laytout)
-        self.layout.addWidget(self.apply_to_current_button)
+        layout.addWidget(self.image_selector)
 
         # Button to save the annotations:
         self.save_button = QPushButton("💾 Save annotations")
         self.save_button.clicked.connect(self.save_state)
-        self.layout.addWidget(self.save_button)
-    
+        layout.addWidget(self.save_button)
+
+        self.layout.addWidget(box)
+
+    def init_ui(self):
+        self.add_media_management_group_ui()
+        self.add_classes_management_group_ui()
+        self.add_annotations_management_group_ui()
+        
     def apply_to_current(self):
         name_candidate = self.new_name.text().lower().replace(" ", "-")
         if name_candidate == "":
@@ -120,17 +147,25 @@ class AnnotateBoundingBoxesWidget(QWidget):
             show_info("No input directory found.")
             return
 
+    def upper_corner(self, box):
+        return [np.max(axis) for axis in box.T]
+    
+    def lower_corner(self, box):
+        return [np.min(axis) for axis in box.T]
+
     def yolo2bbox(self, bboxes):
+        # x-width/2, y-height/2
         xmin, ymin = bboxes[0]-bboxes[2]/2, bboxes[1]-bboxes[3]/2
+        # x+width/2, y+height/2
         xmax, ymax = bboxes[0]+bboxes[2]/2, bboxes[1]+bboxes[3]/2
         return xmin, ymin, xmax, ymax
     
     def bbox2yolo(self, bbox):
-        ymax, xmax = bbox[2]
-        ymin, xmin = bbox[0]
+        ymax, xmax = self.upper_corner(bbox)
+        ymin, xmin = self.lower_corner(bbox)
         shape = self.viewer.layers[_IMAGE_LAYER].data.shape
         if len(shape) == 3:
-            shape = shape[0:2]
+            shape = shape[:2]
         height, width = shape
         x = (xmin + xmax) / 2 / width
         y = (ymin + ymax) / 2 / height
@@ -146,9 +181,27 @@ class AnnotateBoundingBoxesWidget(QWidget):
             tuples.append(bbox)
         return tuples
     
+    def sanity_check(self, tuples):
+        """
+        Verifies that each tuple contains not-corrupted data.
+        """
+        correct_tuples = []
+        all_classes = self.get_classes()
+        all_good = True
+        shape = self.viewer.layers[_IMAGE_LAYER].data.shape
+        if len(shape) == 3:
+            shape = shape[:2]
+
+        for c, x, y, x, h in tuples:
+            if c < 0 or c >= len(all_classes):
+                all_good = False
+                continue
+        
+        return all_good
+    
     def write_annotations(self, tuples):
         labels_folder = os.path.join(self.sources_directory, self.annotations_name.text())
-        labels_path = os.path.join(labels_folder, self.image_selector.currentText().replace(".tif", ".txt"))
+        labels_path = os.path.join(labels_folder, self.image_selector.currentText().replace(EXT, ".txt"))
         with open(labels_path, "w") as f:
             for row in tuples:
                 f.write(" ".join(map(str, row)) + "\n")
@@ -220,9 +273,9 @@ class AnnotateBoundingBoxesWidget(QWidget):
             return
         classes = []
         with open(classes_path, "r") as f:
-            classes = f.read().split('\n')
+            classes = [item for item in f.read().split('\n') if len(item.strip()) > 0]
         for i, c in enumerate(classes):
-            if c == "":
+            if len(c.strip()) == 0:
                 continue
             color = _COLORS[i % len(_COLORS)]
             self.viewer.add_shapes(
@@ -236,8 +289,9 @@ class AnnotateBoundingBoxesWidget(QWidget):
     
     def add_labels(self, data):
         shape = self.viewer.layers[_IMAGE_LAYER].data.shape
+        # shape = (n_channels, height, width)
         if len(shape) == 3:
-            shape = shape[0:2]
+            shape = shape[:2]
         h, w = shape
         class_layers = [l.name for l in self.viewer.layers if l.name.startswith(_CLASS_PREFIX)]
 
@@ -284,10 +338,10 @@ class AnnotateBoundingBoxesWidget(QWidget):
         if (self.sources_directory is None) or (current_image is None) or (current_image == "---") or (current_image == ""):
             return
         image_path = os.path.join(self.sources_directory, self.inputs_name.text(), current_image)
-        labels_path = os.path.join(self.sources_directory, self.annotations_name.text(), current_image.replace(".tif", ".txt"))
+        labels_path = os.path.join(self.sources_directory, self.annotations_name.text(), current_image.replace(EXT, ".txt"))
         if not os.path.isfile(image_path):
             return
-        data = tifffile.imread(image_path)
+        data = imread(image_path)
         if _IMAGE_LAYER in self.viewer.layers:
             self.viewer.layers[_IMAGE_LAYER].data = data
         else:
