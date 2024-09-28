@@ -26,9 +26,11 @@ classifiers = [
 requires-python = ">=3.9"
 dependencies = [
     "numpy",
-    "magicgui",
     "qtpy",
     "scikit-image",
+    "opencv-python-headless",
+    "pint",
+    "tifffile"
 ]
 
 [project.optional-dependencies]
@@ -39,6 +41,12 @@ testing = [
     "pytest-qt",  # https://pytest-qt.readthedocs.io/en/latest/
     "napari",
     "pyqt5",
+    "numpy",
+    "qtpy",
+    "scikit-image",
+    "opencv-python-headless",
+    "pint",
+    "tifffile"
 ]
 
 [project.entry-points."napari.manifest"]
