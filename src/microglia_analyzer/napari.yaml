@@ -18,7 +18,8 @@ contributions:
   widgets:
     - command: microglia-analyzer.tiles_creator
       display_name: Tiles Creator
-    - command: microglia-analyzer.microglia_analyzer
-      display_name: Microglia Analyzer
     - command: microglia-analyzer.yolo_annotator
       display_name: YOLO Annotator
+    - command: microglia-analyzer.microglia_analyzer
+      display_name: Microglia Analyzer
+    
