@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 import itertools
 from microglia_analyzer.tiles.tiler import ImageTiler2D, normalize
+from microglia_analyzer.tiles.recalibrate import recalibrate_shape, recalibrate_image
 
 
 """ TESTS:
@@ -11,10 +12,11 @@ from microglia_analyzer.tiles.tiler import ImageTiler2D, normalize
     - [X] Test que les tiles ont la même forme que ce qui est calculé.
     - [X] Test que le nombre de tiles correspond à la grid size.
     - [X] Test que le nombre de tiles correspond au nombre de coefficients de blending.
-    - [ ] Test que la normalization fonctionne correctement, avec les caps de valeurs.
+    - [X] Test que la normalization fonctionne correctement, avec les caps de valeurs.
     - [X] Test que les tiles fusionnées redonnent l'image d'origine.
     - [X] Test que l'assemblage des coefficients de blending donne un canvas à 1.0 (avec flat et gradient).
     - [X] Test que le découpage et l'assemblage fonctionne peu importe le nombre de channels.
+    - [ ] Test que le recalibrage d'image fonctionne correctement.
 
 """
 
@@ -67,6 +69,14 @@ _IMAGE_NORMALIZE = [
     np.zeros((128, 128, 3)).astype(np.float32)
 ]
 
+_SHAPES_RECALIBRATE = [
+    (0.325, 'um', (100, 100), (100, 100)),
+    (0.325, 'µm', (100, 100), (100, 100)),
+    (0.5  , 'um', (100, 100), (65 , 65)),
+    (0.125, 'um', (100, 100), (260, 260)),
+    (500  , 'nm', (100, 100), (65 , 65)),
+    (125  , 'nm', (100, 100), (260, 260))
+]
 
 # ---------------------------------------------------------------
 
@@ -175,3 +185,11 @@ def test_blending_coefs_sum(patch_size, overlap, shape, blending, nChannels):
     transformed_image = pe.tiles_to_image(tiles)
     diff = np.abs(original_image - transformed_image)
     assert np.max(diff) - np.min(diff) < 1e-5
+
+@pytest.mark.parametrize("input_p_size, input_unit, input_shape, expected_shape", _SHAPES_RECALIBRATE)
+def test_recalibrate_shape(input_p_size, input_unit, input_shape, expected_shape):
+    """
+    Tests that shapes are correctly recalibrated to match a pixel size of 0.325 µm.
+    """
+    new_shape = recalibrate_shape(input_shape, input_p_size, input_unit)
+    assert new_shape == expected_shape

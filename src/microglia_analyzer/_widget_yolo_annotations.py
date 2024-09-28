@@ -4,10 +4,8 @@ from qtpy.QtWidgets import (QWidget, QVBoxLayout, QLineEdit,
 
 from napari.utils.notifications import show_info
 
-# from tifffile import imread
-# EXT = ".tif"
-from cv2 import imread
-EXT = ".png"
+from tifffile import imread
+from microglia_analyzer import TIFF_REGEX
 
 import numpy as np
 import os
@@ -201,7 +199,8 @@ class AnnotateBoundingBoxesWidget(QWidget):
     
     def write_annotations(self, tuples):
         labels_folder = os.path.join(self.sources_directory, self.annotations_name.text())
-        labels_path = os.path.join(labels_folder, self.image_selector.currentText().replace(EXT, ".txt"))
+        current_as_txt = TIFF_REGEX.match(self.image_selector.currentText()).group(1) + ".txt"
+        labels_path = os.path.join(labels_folder, current_as_txt)
         with open(labels_path, "w") as f:
             for row in tuples:
                 f.write(" ".join(map(str, row)) + "\n")
@@ -338,7 +337,8 @@ class AnnotateBoundingBoxesWidget(QWidget):
         if (self.sources_directory is None) or (current_image is None) or (current_image == "---") or (current_image == ""):
             return
         image_path = os.path.join(self.sources_directory, self.inputs_name.text(), current_image)
-        labels_path = os.path.join(self.sources_directory, self.annotations_name.text(), current_image.replace(EXT, ".txt"))
+        current_as_txt = TIFF_REGEX.match(current_image).group(1) + ".txt"
+        labels_path = os.path.join(self.sources_directory, self.annotations_name.text(), current_as_txt)
         if not os.path.isfile(image_path):
             return
         data = imread(image_path)

@@ -12,7 +12,12 @@ contributions:
     - id: microglia-analyzer.yolo_annotator
       python_name: microglia_analyzer._widget_yolo_annotations:AnnotateBoundingBoxesWidget
       title: YOLO Annotator
+    - id: microglia-analyzer.tiles_creator
+      python_name: microglia_analyzer._widget_tiles:TilesCreatorWidget
+      title: Tiles Creator
   widgets:
+    - command: microglia-analyzer.tiles_creator
+      display_name: Tiles Creator
     - command: microglia-analyzer.microglia_analyzer
       display_name: Microglia Analyzer
     - command: microglia-analyzer.yolo_annotator

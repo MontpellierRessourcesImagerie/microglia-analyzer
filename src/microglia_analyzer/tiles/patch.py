@@ -1,3 +1,4 @@
+import numpy as np
 
 class Patch2D(object):
 
@@ -90,3 +91,20 @@ class Patch2D(object):
             self.overlaps[2] = self.overlap if self.lr_corner[1] + self.patch_size <= self.shape[1] else self.shape[1] - self.lr_corner[1]
         if self.has_neighbour[3]:
             self.overlaps[3] = max(self.overlap, y - self.ul_corner[0])
+    
+    def as_napari_rectangle(self):
+        """
+        Returns this bounding-box as a Napari rectangle, which is a numpy array:
+        [
+            [yMin, xMin],
+            [yMin, xMax],
+            [xMax, yMin],
+            [xMax, yMax]
+        ]
+        """
+        return np.array([
+            [self.ul_corner[0], self.ul_corner[1]],
+            [self.ul_corner[0], self.lr_corner[1]],
+            [self.lr_corner[0], self.lr_corner[1]],
+            [self.lr_corner[0], self.ul_corner[1]]
+        ])

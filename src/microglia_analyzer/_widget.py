@@ -18,7 +18,7 @@ import math
 import os
 import re
 
-
+from microglia_analyzer import TIFF_REGEX
 from microglia_analyzer.microglia_analyzer import MicrogliaAnalyzer
 
 
@@ -211,10 +211,9 @@ class MicrogliaAnalyzerWidget(QWidget):
         All the TIFF are returned, whatever the number of 'f' or the case.
         If the `no_ext` attribute is True, the name is returned without the extension.
         """
-        tiff_regex = re.compile(r"(.+)\.tiff?", re.IGNORECASE)
         tiff_files = []
         for file_name in os.listdir(folder_path):
-            match = tiff_regex.match(file_name)
+            match = TIFF_REGEX.match(file_name)
             if match:
                 if no_ext:
                     tiff_files.append(match.group(1))
