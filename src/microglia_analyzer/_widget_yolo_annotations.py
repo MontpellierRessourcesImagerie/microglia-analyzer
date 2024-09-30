@@ -94,18 +94,13 @@ class AnnotateBoundingBoxesWidget(QWidget):
         layout = QVBoxLayout()
         box.setLayout(layout)
 
-        # Button to add a template layer:
-        self.add_template_button = QPushButton("🔖 Add class layer")
-        self.add_template_button.clicked.connect(self.add_template)
-        layout.addWidget(self.add_template_button)
-
-        # New name for the class layer + 'apply to current layer' button:
-        self.new_name = QLineEdit()
+        # Adds a new class with the current name in the text box:
         h_laytout = QHBoxLayout()
+        self.new_name = QLineEdit()
         h_laytout.addWidget(self.new_name)
-        self.rename_active_class_button = QPushButton("🎯 Rename class")
-        self.rename_active_class_button.clicked.connect(self.rename_active_class)
-        h_laytout.addWidget(self.rename_active_class_button)
+        self.add_yolo_class_button = QPushButton("🔖 New class")
+        self.add_yolo_class_button.clicked.connect(self.add_yolo_class)
+        h_laytout.addWidget(self.add_yolo_class_button)
         layout.addLayout(h_laytout)
 
         self.layout.addWidget(box)
@@ -134,25 +129,6 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.add_annotations_management_group_ui()
 
     # ----------------- CALLBACKS -------------------------------------------
-    
-    def rename_active_class(self):
-        """
-        Takes the name provided by the user through the GUI (in `self.self.new_name`) and renames the active class.
-        Conserves the prefix for the layer to be identified as a YOLO class.
-        The name entered by the user is cleaned (spaces, ...) before being assigned.
-        """
-        name_candidate = self.new_name.text().lower().replace(" ", "-")
-        if name_candidate == "":
-            show_info("Empty name.")
-            return
-        if name_candidate.startswith(_CLASS_PREFIX):
-            full_name = name_candidate
-        else:
-            full_name = _CLASS_PREFIX + name_candidate
-        l = self.viewer.layers.selection.active
-        if (l is not None) and ('face_color' in dir(l)):
-            l.name = full_name
-        self.new_name.setText("")
 
     def select_sources_directory(self):
         """
@@ -248,14 +224,32 @@ class AnnotateBoundingBoxesWidget(QWidget):
             count += 1
         self.write_annotations(lines)
 
-    def add_template(self):
+    def get_new_class_name(self):
+        """
+        Probes the input text box and returns the name of the new class.
+        """
+        name_candidate = self.new_name.text().lower().replace(" ", "-")
+        if name_candidate == "":
+            show_info("Empty name.")
+            return None
+        if name_candidate.startswith(_CLASS_PREFIX):
+            full_name = name_candidate
+        else:
+            full_name = _CLASS_PREFIX + name_candidate
+        self.new_name.setText("")
+        return full_name
+
+    def add_yolo_class(self):
+        class_name = self.get_new_class_name()
         if _IMAGE_LAYER not in self.viewer.layers:
             show_info("No image loaded.")
             return
         n_classes = len(self.get_classes())
-        class_name = _CLASS_PREFIX + f"template-{str(n_classes+1).zfill(2)}"
         color = _COLORS[n_classes % len(_COLORS)]
         l = self.viewer.layers.selection.active
+        if class_name is None:
+            return
+        # Clears the selection of the current layer.
         if (l is not None) and (l.name.startswith(_CLASS_PREFIX)):
             l.selected_data = set()
         self.viewer.add_shapes(
