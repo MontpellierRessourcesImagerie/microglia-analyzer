@@ -48,13 +48,15 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.init_ui()
         self.setLayout(self.layout)
 
+    # -------- UI: ----------------------------------
+
     def add_media_management_group_ui(self):
         box = QGroupBox("Media management")
         layout = QVBoxLayout()
         box.setLayout(layout)
 
         # Label + text box for the inputs sub-folder's name:
-        inputs_name_label = QLabel("Inputs sub-folder name:")
+        inputs_name_label = QLabel("Inputs sub-folder:")
         self.inputs_name = QLineEdit()
         self.inputs_name.setText("inputs")
         h_layout = QHBoxLayout()
@@ -63,7 +65,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
         layout.addLayout(h_layout)
 
         # Label + text box for the annotations sub-folder's name:
-        annotations_name_label = QLabel("Annotations sub-folder name:")
+        annotations_name_label = QLabel("Annotations sub-folder:")
         self.annotations_name = QLineEdit()
         self.annotations_name.setText("labels")
         h_layout = QHBoxLayout()
@@ -121,6 +123,8 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.add_media_management_group_ui()
         self.add_classes_management_group_ui()
         self.add_annotations_management_group_ui()
+
+    # -------- CALLBACKS: ----------------------------------
         
     def apply_to_current(self):
         name_candidate = self.new_name.text().lower().replace(" ", "-")
@@ -152,9 +156,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
         return [np.min(axis) for axis in box.T]
 
     def yolo2bbox(self, bboxes):
-        # x-width/2, y-height/2
         xmin, ymin = bboxes[0]-bboxes[2]/2, bboxes[1]-bboxes[3]/2
-        # x+width/2, y+height/2
         xmax, ymax = bboxes[0]+bboxes[2]/2, bboxes[1]+bboxes[3]/2
         return xmin, ymin, xmax, ymax
     
@@ -178,24 +180,6 @@ class AnnotateBoundingBoxesWidget(QWidget):
             bbox = (index,) + self.bbox2yolo(rectangle)
             tuples.append(bbox)
         return tuples
-    
-    def sanity_check(self, tuples):
-        """
-        Verifies that each tuple contains not-corrupted data.
-        """
-        correct_tuples = []
-        all_classes = self.get_classes()
-        all_good = True
-        shape = self.viewer.layers[_IMAGE_LAYER].data.shape
-        if len(shape) == 3:
-            shape = shape[:2]
-
-        for c, x, y, x, h in tuples:
-            if c < 0 or c >= len(all_classes):
-                all_good = False
-                continue
-        
-        return all_good
     
     def write_annotations(self, tuples):
         labels_folder = os.path.join(self.sources_directory, self.annotations_name.text())
@@ -264,8 +248,6 @@ class AnnotateBoundingBoxesWidget(QWidget):
                 self.viewer.layers[n].data = []
 
     def restore_classes_layers(self):
-        if len(self.get_classes()) > 0:
-            return
         classes_path = os.path.join(self.sources_directory, "classes.txt")
         if not os.path.isfile(classes_path):
             show_info("No classes file found.")
@@ -274,11 +256,15 @@ class AnnotateBoundingBoxesWidget(QWidget):
         with open(classes_path, "r") as f:
             classes = [item for item in f.read().split('\n') if len(item.strip()) > 0]
         for i, c in enumerate(classes):
-            if len(c.strip()) == 0:
+            basis = c.strip()
+            if len(basis) == 0:
+                continue
+            name = _CLASS_PREFIX + basis
+            if name in self.viewer.layers:
                 continue
             color = _COLORS[i % len(_COLORS)]
             self.viewer.add_shapes(
-                name=_CLASS_PREFIX + c,
+                name=name,
                 edge_color=color,
                 face_color="#00000000",
                 opacity=0.8,
@@ -351,12 +337,3 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.clear_classes_layers()
         if os.path.isfile(labels_path):
             self.load_annotations(labels_path)
-
-    def init_reset_state(self):
-        """
-        This function must:
-            - Open the image currently pointed at by the combobox.
-            - Clear all the classes layers.
-        """
-        self.clear_classes_layers()
-        pass

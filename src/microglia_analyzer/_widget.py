@@ -43,7 +43,9 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.font.setFamily("Arial Unicode MS, Segoe UI Emoji, Apple Color Emoji, Noto Color Emoji")
         self.media_control_panel()
         self.calibration_panel()
-        self.microglia_panel()
+        self.segment_microglia_panel()
+        self.classify_microglia_panel()
+        self.measures_panel()
         self.setLayout(self.layout)
     
     def media_control_panel(self):
@@ -111,31 +113,76 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.calibration_group.setLayout(layout)
         self.layout.addWidget(self.calibration_group)
 
-    def microglia_panel(self):
-        self.microglia_group = QGroupBox("Features extraction")
+    def segment_microglia_panel(self):
+        self.segment_microglia_group = QGroupBox("Segmentation")
         layout = QVBoxLayout()
 
-        self.produce_patches_button = QPushButton("🧩 Produce patches")
-        self.produce_patches_button.setFont(self.font)
-        self.produce_patches_button.clicked.connect(self.produce_patches)
-        layout.addWidget(self.produce_patches_button)
+        # Dropdown menu to choose a model
+        self.model_selector = QComboBox()
+        self.model_selector.addItem("---")
+        layout.addWidget(self.model_selector)
 
-        self.segment_microglia_button = QPushButton("🔍 Segment microglia")
+        # Minimal area of a microglia
+        h_layout = QHBoxLayout()
+        self.minimal_area_label = QLabel("Min area (µm²):")
+        h_layout.addWidget(self.minimal_area_label)
+        self.minimal_area_input = QSpinBox()
+        self.minimal_area_input.setRange(0, 1000000)
+        h_layout.addWidget(self.minimal_area_input)
+        layout.addLayout(h_layout)
+
+        # Probality threshold slider
+        h_layout = QHBoxLayout()
+        self.probability_threshold_label = QLabel("Min probability (%)")
+        h_layout.addWidget(self.probability_threshold_label)
+        self.probability_threshold_slider = QSlider(Qt.Horizontal)
+        self.probability_threshold_slider.setRange(0, 100)
+        self.probability_threshold_slider.setValue(50)
+        self.probability_threshold_slider.setTickInterval(1)
+        self.probability_threshold_slider.setTickPosition(QSlider.TicksBelow)
+        self.probability_threshold_slider.valueChanged.connect(self.proba_threshold_update)
+        h_layout.addWidget(self.probability_threshold_slider)
+        self.proba_value_label = QLabel("50%")
+        h_layout.addWidget(self.proba_value_label)
+        layout.addLayout(h_layout)
+
+        # Segmentation button
+        self.segment_microglia_button = QPushButton("🔍 Segment")
         self.segment_microglia_button.setFont(self.font)
         self.segment_microglia_button.clicked.connect(self.segment_microglia)
         layout.addWidget(self.segment_microglia_button)
 
-        self.classify_microglia_button = QPushButton("🧠 Classify microglia")
+        self.segment_microglia_group.setLayout(layout)
+        self.layout.addWidget(self.segment_microglia_group)
+
+    def classify_microglia_panel(self):
+        self.classify_microglia_group = QGroupBox("Classification")
+        layout = QVBoxLayout()
+
+        # Dropdown menu to choose a model
+        self.model_selector = QComboBox()
+        self.model_selector.addItem("---")
+        layout.addWidget(self.model_selector)
+
+        # Classification button
+        self.classify_microglia_button = QPushButton("🧠 Classify")
         self.classify_microglia_button.setFont(self.font)
         self.classify_microglia_button.clicked.connect(self.classify_microglia)
         layout.addWidget(self.classify_microglia_button)
 
-        self.skeletonize_microglia_button = QPushButton("🦴 Skeletonize microglia")
+        self.classify_microglia_group.setLayout(layout)
+        self.layout.addWidget(self.classify_microglia_group)
+
+    def measures_panel(self):
+        self.microglia_group = QGroupBox("Measures")
+        layout = QVBoxLayout()
+
+        self.skeletonize_microglia_button = QPushButton("🦴 Skeletonize")
         self.skeletonize_microglia_button.setFont(self.font)
         self.skeletonize_microglia_button.clicked.connect(self.skeletonize_microglia)
         layout.addWidget(self.skeletonize_microglia_button)
 
-        self.export_control_images_button = QPushButton("📸 Export control images")
+        self.export_control_images_button = QPushButton("📸 Export control image")
         self.export_control_images_button.setFont(self.font)
         self.export_control_images_button.clicked.connect(self.export_control_images)
         layout.addWidget(self.export_control_images_button)
@@ -171,6 +218,9 @@ class MicrogliaAnalyzerWidget(QWidget):
 
     def apply_calibration(self):
         pass
+
+    def proba_threshold_update(self):
+        self.proba_value_label.setText(f"{self.probability_threshold_slider.value()}%")
 
     def produce_patches(self):
         pass
