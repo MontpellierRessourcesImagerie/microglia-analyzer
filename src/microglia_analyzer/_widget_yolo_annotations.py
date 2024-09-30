@@ -313,7 +313,6 @@ class AnnotateBoundingBoxesWidget(QWidget):
             color = _COLORS[i % len(_COLORS)]
             self.viewer.add_shapes(
                 name=name,
-                name=name,
                 edge_color=color,
                 face_color="transparent",
                 opacity=0.8,
