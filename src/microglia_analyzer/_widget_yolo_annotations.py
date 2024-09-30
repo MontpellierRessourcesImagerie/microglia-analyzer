@@ -57,7 +57,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.init_ui()
         self.setLayout(self.layout)
 
-    # ----------------- UI -------------------------------------------
+    # -------- UI: ----------------------------------
 
     def add_media_management_group_ui(self):
         box = QGroupBox("Media management")
@@ -65,7 +65,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
         box.setLayout(layout)
 
         # Label + text box for the inputs sub-folder's name:
-        inputs_name_label = QLabel("Inputs sub-folder name:")
+        inputs_name_label = QLabel("Inputs sub-folder:")
         self.inputs_name = QLineEdit()
         self.inputs_name.setText("inputs")
         h_layout = QHBoxLayout()
@@ -74,7 +74,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
         layout.addLayout(h_layout)
 
         # Label + text box for the annotations sub-folder's name:
-        annotations_name_label = QLabel("Annotations sub-folder name:")
+        annotations_name_label = QLabel("Annotations sub-folder:")
         self.annotations_name = QLineEdit()
         self.annotations_name.setText("labels")
         h_layout = QHBoxLayout()
@@ -312,6 +312,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
                 continue
             color = _COLORS[i % len(_COLORS)]
             self.viewer.add_shapes(
+                name=name,
                 name=name,
                 edge_color=color,
                 face_color="transparent",
