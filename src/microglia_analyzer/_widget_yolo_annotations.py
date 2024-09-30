@@ -49,7 +49,11 @@ class AnnotateBoundingBoxesWidget(QWidget):
         # Active Napari viewer.
         self.viewer = napari_viewer
         # Folder in which are located the 'images' and 'annotations' folders.
+        self.root_directory = None
+        # Name of the folder in which images are located
         self.sources_directory = None
+        # Name of the folder in which annotations are located
+        self.annotations_directory = None
         # List of images ('.tif') in the 'images' folder.
         self.images_list = []
 
@@ -64,10 +68,16 @@ class AnnotateBoundingBoxesWidget(QWidget):
         layout = QVBoxLayout()
         box.setLayout(layout)
 
+        # Label + button to select the source directory:
+        self.select_sources_directory_button = QPushButton("📂 Sources directory")
+        self.select_sources_directory_button.clicked.connect(self.select_sources_directory)
+        layout.addWidget(self.select_sources_directory_button)
+
         # Label + text box for the inputs sub-folder's name:
         inputs_name_label = QLabel("Inputs sub-folder:")
-        self.inputs_name = QLineEdit()
-        self.inputs_name.setText("inputs")
+        self.inputs_name = QComboBox()
+        self.inputs_name.currentIndexChanged.connect(self.set_sources_directory)
+        self.inputs_name.addItem("---")
         h_layout = QHBoxLayout()
         h_layout.addWidget(inputs_name_label)
         h_layout.addWidget(self.inputs_name)
@@ -75,17 +85,16 @@ class AnnotateBoundingBoxesWidget(QWidget):
 
         # Label + text box for the annotations sub-folder's name:
         annotations_name_label = QLabel("Annotations sub-folder:")
-        self.annotations_name = QLineEdit()
-        self.annotations_name.setText("labels")
+        self.annotations_name = QLabel()
+        self.annotations_name.setText("---")
+        self.annotations_name.setMaximumHeight(20)
+        font = self.annotations_name.font()
+        font.setBold(True)
+        self.annotations_name.setFont(font)
         h_layout = QHBoxLayout()
         h_layout.addWidget(annotations_name_label)
         h_layout.addWidget(self.annotations_name)
         layout.addLayout(h_layout)
-
-        # Label + button to select the source directory:
-        self.select_sources_directory_button = QPushButton("📂 Sources directory")
-        self.select_sources_directory_button.clicked.connect(self.select_sources_directory)
-        layout.addWidget(self.select_sources_directory_button)
 
         self.layout.addWidget(box)
     
@@ -102,6 +111,17 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.add_yolo_class_button.clicked.connect(self.add_yolo_class)
         h_laytout.addWidget(self.add_yolo_class_button)
         layout.addLayout(h_laytout)
+
+        # Label showing the number of boxes in each class
+        self.counts_label = QLabel("Counts:")
+        font = self.counts_label.font()
+        font.setBold(True)
+        self.counts_label.setFont(font)
+        layout.addWidget(self.counts_label)
+        self.count_display_label = QLabel("")
+        self.counts_label.setMaximumHeight(20)
+        self.count_display_label.setMaximumHeight(10)
+        layout.addWidget(self.count_display_label)
 
         self.layout.addWidget(box)
     
@@ -134,13 +154,11 @@ class AnnotateBoundingBoxesWidget(QWidget):
         """
         Select the folder containing the "images" and "labels" sub-folders.
         """
-        directory = QFileDialog.getExistingDirectory(self, "Select sources directory")
+        directory = QFileDialog.getExistingDirectory(self, "Select root directory")
         if not os.path.isdir(directory):
             show_info("Invalid directory.")
             return
-        if not self.set_sources_directory(directory):
-            show_info("No input directory found.")
-            return
+        self.set_root_directory(directory)
 
     def upper_corner(self, box):    
         """
@@ -203,13 +221,13 @@ class AnnotateBoundingBoxesWidget(QWidget):
         return tuples
     
     def write_annotations(self, tuples):
-        labels_folder = os.path.join(self.sources_directory, self.annotations_name.text())
+        labels_folder = os.path.join(self.root_directory, self.annotations_directory)
         current_as_txt = TIFF_REGEX.match(self.image_selector.currentText()).group(1) + ".txt"
         labels_path = os.path.join(labels_folder, current_as_txt)
         with open(labels_path, "w") as f:
             for row in tuples:
                 f.write(" ".join(map(str, row)) + "\n")
-        with open(os.path.join(self.sources_directory, "classes.txt"), "w") as f:
+        with open(os.path.join(self.root_directory, "classes.txt"), "w") as f:
             for c in self.get_classes():
                 f.write(c + "\n")
         show_info("Annotations saved.")
@@ -223,6 +241,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
             lines += self.layer2yolo(l.name, count)
             count += 1
         self.write_annotations(lines)
+        self.count_boxes()
 
     def get_new_class_name(self):
         """
@@ -259,15 +278,32 @@ class AnnotateBoundingBoxesWidget(QWidget):
             opacity=0.8,
             edge_width=3
         )
+    
+    def set_root_directory(self, directory):
+        folders = sorted([f for f in os.listdir(directory) if os.path.isdir(os.path.join(directory, f))])
+        folders = ["---"] + folders
+        self.inputs_name.clear()
+        self.inputs_name.addItems(folders)
+        self.root_directory = directory
 
-    def set_sources_directory(self, directory):
-        inputs_path = os.path.join(directory, self.inputs_name.text())
-        annotations_path = os.path.join(directory, self.annotations_name.text())
+    def set_sources_directory(self):
+        source_folder = self.inputs_name.currentText()
+        annotations_folder = source_folder + "-labels"
+        if (source_folder is None) or (source_folder == "---") or (source_folder == ""):
+            return
+        inputs_path      = os.path.join(self.root_directory, source_folder)
+        annotations_path = os.path.join(self.root_directory, annotations_folder)
         if not os.path.isdir(inputs_path):
             return False
         if not os.path.isdir(annotations_path):
             os.makedirs(annotations_path)
-        self.sources_directory = directory
+        self.sources_directory     = source_folder
+        self.annotations_directory = annotations_folder
+        self.annotations_name.setText(annotations_folder)
+        self.open_sources_directory()
+    
+    def open_sources_directory(self):
+        inputs_path = os.path.join(self.root_directory, self.sources_directory)
         self.images_list = sorted([f for f in os.listdir(inputs_path) if TIFF_REGEX.match(f) is not None])
         if len(self.images_list) == 0: # Didn't find any file in the folder.
             show_info("Didn't find any TIFF file in the provided folder.")
@@ -290,7 +326,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
                 self.viewer.layers[n].data = []
 
     def restore_classes_layers(self):
-        classes_path = os.path.join(self.sources_directory, "classes.txt")
+        classes_path = os.path.join(self.root_directory, "classes.txt")
         if not os.path.isfile(classes_path):
             show_info("No classes file found.")
             return
@@ -388,11 +424,11 @@ class AnnotateBoundingBoxesWidget(QWidget):
         """
         current_image = self.image_selector.currentText()
         # Check that the name is valid.
-        if (self.sources_directory is None) or (current_image is None) or (current_image == "---") or (current_image == ""):
+        if (self.root_directory is None) or (current_image is None) or (current_image == "---") or (current_image == ""):
             return
-        image_path = os.path.join(self.sources_directory, self.inputs_name.text(), current_image)
+        image_path = os.path.join(self.root_directory, self.sources_directory, current_image)
         current_as_txt = TIFF_REGEX.match(current_image).group(1) + ".txt" # Remove extension + adds ".txt" extension.
-        labels_path = os.path.join(self.sources_directory, self.annotations_name.text(), current_as_txt)
+        labels_path = os.path.join(self.root_directory, self.annotations_directory, current_as_txt)
         if not os.path.isfile(image_path):
             print(f"The image: '{current_image}' doesn't exist.")
             return
@@ -406,3 +442,33 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.clear_classes_layers()
         if os.path.isfile(labels_path): # If some annotations already exist for this image.
             self.load_annotations(labels_path)
+        self.count_boxes()
+
+    def count_boxes(self):
+        """
+        Counts the number of boxes in each class to make sure annotations are balanced.
+        """
+        classes = self.get_classes()
+        annotations_path = os.path.join(self.root_directory, self.annotations_directory)
+        counts = dict()
+        for f in os.listdir(annotations_path):
+            if not f.endswith(".txt"):
+                continue
+            with open(os.path.join(annotations_path, f), "r") as file:
+                lines = file.read().split('\n')
+            for line in lines:
+                if line == "":
+                    continue
+                c, _, _, _, _ = line.split(" ")
+                c = int(c)
+                counts[c] = counts.get(c, 0) + 1
+        
+        text = ""
+        for class_idx, class_name in enumerate(classes):
+            if class_idx not in counts:
+                text += f'<span style="color: {_COLORS[class_idx % len(_COLORS)]}"><b>{class_name}</b></span>: 0<br>'
+            else:
+                text += f'<span style="color: {_COLORS[class_idx % len(_COLORS)]}"><b>{classes[class_idx]}</b></span>: {counts[class_idx]}<br>'
+
+        self.count_display_label.setText(text)
+        self.count_display_label.setMaximumHeight(50 * len(counts))
