@@ -4,14 +4,17 @@ from qtpy.QtWidgets import (QWidget, QVBoxLayout, QLineEdit,
 
 from napari.utils.notifications import show_info
 
-from tifffile import imread
+import tifffile
 from microglia_analyzer import TIFF_REGEX
 
 import numpy as np
 import os
 
+# Prefix of a layer name to be considered as a YOLO class.
 _CLASS_PREFIX = "class."
+# Name of the layer containing the current image.
 _IMAGE_LAYER  = "Image"
+# Colors assigned to each YOLO class.
 _COLORS       = [
     "#FF0000",
     "#00FF00",
@@ -31,6 +34,12 @@ _COLORS       = [
     "#808000"
 ]
 
+# A YOLO bounding-box == a tuple of 5 elements:
+#   - (int) The class to which this box belongs.
+#   - (float) x component of the box's center (between 0.0 and 1.0) in percentage of image width.
+#   - (float) y component of the box's center (between 0.0 and 1.0) in percentage of image height.
+#   - (float) width of the box (between 0.0 and 1.0) in percentage of image width.
+#   - (float) height of the box (between 0.0 and 1.0) in percentage of image height.
 
 class AnnotateBoundingBoxesWidget(QWidget):
 
@@ -47,6 +56,8 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.layout = QVBoxLayout()
         self.init_ui()
         self.setLayout(self.layout)
+
+    # ----------------- UI -------------------------------------------
 
     def add_media_management_group_ui(self):
         box = QGroupBox("Media management")
@@ -92,9 +103,9 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.new_name = QLineEdit()
         h_laytout = QHBoxLayout()
         h_laytout.addWidget(self.new_name)
-        self.apply_to_current_button = QPushButton("🎯 Rename class")
-        self.apply_to_current_button.clicked.connect(self.apply_to_current)
-        h_laytout.addWidget(self.apply_to_current_button)
+        self.rename_active_class_button = QPushButton("🎯 Rename class")
+        self.rename_active_class_button.clicked.connect(self.rename_active_class)
+        h_laytout.addWidget(self.rename_active_class_button)
         layout.addLayout(h_laytout)
 
         self.layout.addWidget(box)
@@ -121,8 +132,15 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.add_media_management_group_ui()
         self.add_classes_management_group_ui()
         self.add_annotations_management_group_ui()
-        
-    def apply_to_current(self):
+
+    # ----------------- CALLBACKS -------------------------------------------
+    
+    def rename_active_class(self):
+        """
+        Takes the name provided by the user through the GUI (in `self.self.new_name`) and renames the active class.
+        Conserves the prefix for the layer to be identified as a YOLO class.
+        The name entered by the user is cleaned (spaces, ...) before being assigned.
+        """
         name_candidate = self.new_name.text().lower().replace(" ", "-")
         if name_candidate == "":
             show_info("Empty name.")
@@ -137,6 +155,9 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.new_name.setText("")
 
     def select_sources_directory(self):
+        """
+        Select the folder containing the "images" and "labels" sub-folders.
+        """
         directory = QFileDialog.getExistingDirectory(self, "Select sources directory")
         if not os.path.isdir(directory):
             show_info("Invalid directory.")
@@ -145,57 +166,65 @@ class AnnotateBoundingBoxesWidget(QWidget):
             show_info("No input directory found.")
             return
 
-    def upper_corner(self, box):
+    def upper_corner(self, box):    
+        """
+        Locates the upper-right corner of a bounding-box having the Napari format.
+        Works only for rectangles.
+        The order of coordinates changes depending on the drawing direction of the rectangle!!!
+
+        Args:
+            - box (str): A Napari bounding-box, as it can be found in the '.data' of a shape layer.
+        """
         return [np.max(axis) for axis in box.T]
     
     def lower_corner(self, box):
+        """
+        Locates the lower-left corner of a bounding-box having the Napari format.
+        Works only for rectangles.
+        The order of coordinates changes depending on the drawing direction of the rectangle!!!
+
+        Args:
+            - box (str): A Napari bounding-box, as it can be found in the '.data' of a shape layer.
+        """
         return [np.min(axis) for axis in box.T]
 
     def yolo2bbox(self, bboxes):
-        # x-width/2, y-height/2
+        """
+        Takes a YOLO bounding-box and converts it to the Napari format.
+        The output can be used in a shape layer.
+        """
         xmin, ymin = bboxes[0]-bboxes[2]/2, bboxes[1]-bboxes[3]/2
-        # x+width/2, y+height/2
         xmax, ymax = bboxes[0]+bboxes[2]/2, bboxes[1]+bboxes[3]/2
         return xmin, ymin, xmax, ymax
     
     def bbox2yolo(self, bbox):
+        """
+        Converts a Napari bounding-box (from a shape layer) into a YOLO bounding-box.
+        Doesn't handle the class (int) by itself, only the coordinates.
+
+        Args:
+            - bbox (np.array): Array containing coordinates of a bounding-box as in a shape layer.
+        
+        Returns:
+            (tuple): 4 floats representing the x-centroid, the y-centroid, the width and the height in YOLO format.
+                     It means that all these coordinates are percentages of the image's dimensions.
+        """
         ymax, xmax = self.upper_corner(bbox)
         ymin, xmin = self.lower_corner(bbox)
-        shape = self.viewer.layers[_IMAGE_LAYER].data.shape
-        if len(shape) == 3:
-            shape = shape[:2]
-        height, width = shape
+        height, width = self.viewer.layers[_IMAGE_LAYER].data.shape[:2]
         x = (xmin + xmax) / 2 / width
         y = (ymin + ymax) / 2 / height
         w = (xmax - xmin) / width
         h = (ymax - ymin) / height
         return round(x, 3), round(y, 3), round(w, 3), round(h, 3)
     
-    def points2yolo(self, layer_name, index):
+    def layer2yolo(self, layer_name, index):
         data = self.viewer.layers[layer_name].data
         tuples = []
         for rectangle in data:
             bbox = (index,) + self.bbox2yolo(rectangle)
             tuples.append(bbox)
         return tuples
-    
-    def sanity_check(self, tuples):
-        """
-        Verifies that each tuple contains not-corrupted data.
-        """
-        correct_tuples = []
-        all_classes = self.get_classes()
-        all_good = True
-        shape = self.viewer.layers[_IMAGE_LAYER].data.shape
-        if len(shape) == 3:
-            shape = shape[:2]
-
-        for c, x, y, x, h in tuples:
-            if c < 0 or c >= len(all_classes):
-                all_good = False
-                continue
-        
-        return all_good
     
     def write_annotations(self, tuples):
         labels_folder = os.path.join(self.sources_directory, self.annotations_name.text())
@@ -215,7 +244,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
         for l in self.viewer.layers:
             if not l.name.startswith(_CLASS_PREFIX):
                 continue
-            lines += self.points2yolo(l.name, count)
+            lines += self.layer2yolo(l.name, count)
             count += 1
         self.write_annotations(lines)
 
@@ -232,7 +261,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.viewer.add_shapes(
             name=class_name,
             edge_color=color,
-            face_color="#00000000",
+            face_color="transparent",
             opacity=0.8,
             edge_width=3
         )
@@ -245,7 +274,10 @@ class AnnotateBoundingBoxesWidget(QWidget):
         if not os.path.isdir(annotations_path):
             os.makedirs(annotations_path)
         self.sources_directory = directory
-        self.images_list = sorted([f for f in os.listdir(inputs_path)])
+        self.images_list = sorted([f for f in os.listdir(inputs_path) if TIFF_REGEX.match(f) is not None])
+        if len(self.images_list) == 0: # Didn't find any file in the folder.
+            show_info("Didn't find any TIFF file in the provided folder.")
+            self.images_list = ['---']
         self.image_selector.clear()
         self.image_selector.addItems(self.images_list)
         return True
@@ -264,8 +296,6 @@ class AnnotateBoundingBoxesWidget(QWidget):
                 self.viewer.layers[n].data = []
 
     def restore_classes_layers(self):
-        if len(self.get_classes()) > 0:
-            return
         classes_path = os.path.join(self.sources_directory, "classes.txt")
         if not os.path.isfile(classes_path):
             show_info("No classes file found.")
@@ -274,26 +304,30 @@ class AnnotateBoundingBoxesWidget(QWidget):
         with open(classes_path, "r") as f:
             classes = [item for item in f.read().split('\n') if len(item.strip()) > 0]
         for i, c in enumerate(classes):
-            if len(c.strip()) == 0:
+            basis = c.strip()
+            if len(basis) == 0:
+                continue
+            name = _CLASS_PREFIX + basis
+            if name in self.viewer.layers:
                 continue
             color = _COLORS[i % len(_COLORS)]
             self.viewer.add_shapes(
-                name=_CLASS_PREFIX + c,
+                name=name,
                 edge_color=color,
-                face_color="#00000000",
+                face_color="transparent",
                 opacity=0.8,
                 edge_width=3
             )
         show_info(f"Classes restored: {classes}")
     
     def add_labels(self, data):
-        shape = self.viewer.layers[_IMAGE_LAYER].data.shape
-        # shape = (n_channels, height, width)
-        if len(shape) == 3:
-            shape = shape[:2]
-        h, w = shape
+        """
+        Uses the dictionary of data to reset and refill shapes layers containing YOLO bounding-boxes.
+        The class index refers to the index in which shape layers appear in the layers stack of Napari.
+        """
+        # Boxes are created according to the current image's size.
+        h, w = self.viewer.layers[_IMAGE_LAYER].data.shape[:2]
         class_layers = [l.name for l in self.viewer.layers if l.name.startswith(_CLASS_PREFIX)]
-
         for c, bbox_list in data.items():
             rectangles = []
             for bbox in bbox_list:
@@ -306,11 +340,26 @@ class AnnotateBoundingBoxesWidget(QWidget):
                 rectangles.append(np.array(points))
             layer = self.viewer.layers[class_layers[c]]
             layer.data = rectangles
-            layer.face_color='#00000000'
+            layer.face_color='transparent'
             layer.edge_color=_COLORS[c % len(_COLORS)]
             layer.edge_width=3
 
     def load_annotations(self, labels_path):
+        """
+        Loads a file (.txt) containing annotations over the currently opened image.
+        Parses the file and expects for each line:
+        - (int) The box's class
+        - (float) The box's x component
+        - (float) The box's y component
+        - (float) The box's width
+        - (float) The box's height
+        All these values are separated with spaces.
+        The internal structure (a dictionary) makes a list of boxes per class index:
+            data[class_index] = [(x1, y1, w1, h1), (x2, y2, w2, h2)]
+
+        Args:
+            - labels_path (str): The absolute path to the ".txt" file.
+        """
         lines = []
         with open(labels_path, "r") as f:
             lines = f.read().split('\n')
@@ -326,6 +375,12 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.add_labels(data)
 
     def deselect_all(self):
+        """
+        Deselects everything in a shape layer.
+        It is required when you flush the content of a shape layer when you open a new image.
+        If you flush with an active selection, you will get an "index out of range" right away.
+        Only targets shape layers representing YOLO classes.
+        """
         for l in self.viewer.layers:
             if not l.name.startswith(_CLASS_PREFIX):
                 continue
@@ -333,15 +388,21 @@ class AnnotateBoundingBoxesWidget(QWidget):
             l.selected_data = set()
 
     def open_image(self):
+        """
+        Uses the value contained in the `self.image_selector` to find and open an image.
+        Reloads the annotations if some were already made for this image.
+        """
         current_image = self.image_selector.currentText()
+        # Check that the name is valid.
         if (self.sources_directory is None) or (current_image is None) or (current_image == "---") or (current_image == ""):
             return
         image_path = os.path.join(self.sources_directory, self.inputs_name.text(), current_image)
-        current_as_txt = TIFF_REGEX.match(current_image).group(1) + ".txt"
+        current_as_txt = TIFF_REGEX.match(current_image).group(1) + ".txt" # Remove extension + adds ".txt" extension.
         labels_path = os.path.join(self.sources_directory, self.annotations_name.text(), current_as_txt)
         if not os.path.isfile(image_path):
+            print(f"The image: '{current_image}' doesn't exist.")
             return
-        data = imread(image_path)
+        data = tifffile.imread(image_path)
         if _IMAGE_LAYER in self.viewer.layers:
             self.viewer.layers[_IMAGE_LAYER].data = data
         else:
@@ -349,14 +410,5 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.deselect_all()
         self.restore_classes_layers()
         self.clear_classes_layers()
-        if os.path.isfile(labels_path):
+        if os.path.isfile(labels_path): # If some annotations already exist for this image.
             self.load_annotations(labels_path)
-
-    def init_reset_state(self):
-        """
-        This function must:
-            - Open the image currently pointed at by the combobox.
-            - Clear all the classes layers.
-        """
-        self.clear_classes_layers()
-        pass
