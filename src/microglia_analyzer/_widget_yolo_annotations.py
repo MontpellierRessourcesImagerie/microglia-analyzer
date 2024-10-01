@@ -5,7 +5,7 @@ from qtpy.QtWidgets import (QWidget, QVBoxLayout, QLineEdit,
 from napari.utils.notifications import show_info
 
 import tifffile
-import cv2
+import skimage
 
 import numpy as np
 import os
@@ -218,6 +218,8 @@ class AnnotateBoundingBoxesWidget(QWidget):
         if not os.path.isfile(image_path):
             print(f"The image: '{current_image}' doesn't exist.")
             return
+        print(image_path, ARGS, imread, current_image)
+        image_path = os.fsencode(image_path).decode('utf-8')
         data = imread(image_path, **ARGS)
         if _IMAGE_LAYER in self.viewer.layers:
             self.viewer.layers[_IMAGE_LAYER].data = data
@@ -254,22 +256,32 @@ class AnnotateBoundingBoxesWidget(QWidget):
         Locates the upper-right corner of a bounding-box having the Napari format.
         Works only for rectangles.
         The order of coordinates changes depending on the drawing direction of the rectangle!!!
+        Once transposed (.T), a Napari bounding box is composed of 2 arrays, one for Y and one for X.
 
         Args:
-            - box (str): A Napari bounding-box, as it can be found in the '.data' of a shape layer.
+            - box (np.array): A Napari bounding-box, as it can be found in the '.data' of a shape layer.
+        
+        Returns:
+            (np.array): A (Y, X) 2D representing the maximal coordinates on both axis.
         """
-        return [np.max(axis) for axis in box.T]
+        y, x = [np.max(axis) for axis in box.T]
+        height, width = self.viewer.layers[_IMAGE_LAYER].data.shape[_WIDTH_HEIGHT[0]:_WIDTH_HEIGHT[1]]
+        return [min(y, height-1), min(x, width-1)]
     
     def lower_corner(self, box):
         """
         Locates the lower-left corner of a bounding-box having the Napari format.
         Works only for rectangles.
         The order of coordinates changes depending on the drawing direction of the rectangle!!!
+        Once transposed (.T), a Napari bounding box is composed of 2 arrays, one for Y and one for X.
 
         Args:
-            - box (str): A Napari bounding-box, as it can be found in the '.data' of a shape layer.
+            - box (np.array): A Napari bounding-box, as it can be found in the '.data' of a shape layer.
+        
+        Returns:
+            (np.array): A (Y, X) 2D representing the minimal coordinates on both axis.
         """
-        return [np.min(axis) for axis in box.T]
+        return [max(0, np.min(axis)) for axis in box.T]
 
     def yolo2bbox(self, bboxes):
         """
@@ -311,7 +323,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
     
     def write_annotations(self, tuples):
         """
-        Responsible for writing the annotations in a '.txt' file, and updating the 'classes.txt' file.
+        Responsible for writing the annotations in a '.txt' file, and updating the '-classes.txt' file.
 
         Args:
             - tuples (list): A list of tuples, each tuple containing the class index and the YOLO bounding-box.
@@ -323,7 +335,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
         with open(labels_path, "w") as f:
             for row in tuples:
                 f.write(" ".join(map(str, row)) + "\n")
-        with open(os.path.join(self.root_directory, "classes.txt"), "w") as f:
+        with open(os.path.join(self.root_directory, os.path.basename(self.sources_directory)+"classes.txt"), "w") as f:
             for c in self.get_classes():
                 f.write(c + "\n")
         show_info("Annotations saved.")
@@ -374,9 +386,9 @@ class AnnotateBoundingBoxesWidget(QWidget):
             if len(im.shape) == 3:
                 _WIDTH_HEIGHT = (1, 3)
         else:
-            imread = cv2.imread
+            imread = skimage.io.imread
             _WIDTH_HEIGHT = (0, 2)
-            ARGS = {'flags': cv2.IMREAD_GRAYSCALE}
+            ARGS = {'as_gray': True}
 
     def open_sources_directory(self):
         """
@@ -424,11 +436,11 @@ class AnnotateBoundingBoxesWidget(QWidget):
 
     def restore_classes_layers(self):
         """
-        Parses the 'classes.txt' file to restore the classes layers.
+        Parses the '-classes.txt' file to restore the classes layers.
         The file contains the name of the classes, one per line and nothing else.
         Creates the associated shape layers with the right colors.
         """
-        classes_path = os.path.join(self.root_directory, "classes.txt")
+        classes_path = os.path.join(self.root_directory, os.path.basename(self.sources_directory)+"-classes.txt")
         if not os.path.isfile(classes_path):
             show_info("No classes file found.")
             return
