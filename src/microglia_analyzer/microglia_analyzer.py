@@ -18,9 +18,9 @@ class MicrogliaAnalyzer(object):
         self.input_image = None
         # Directory in which we export stuff relative to the `image_path`.
         self.working_directory = None
-        # Name of the YOLO model that we use to classify microglia.
+        # Path of the YOLO model that we use to classify microglia.
         self.classification_model = None
-        # Name of the model that we use to segment microglia on YOLO patches.
+        # Path of the model that we use to segment microglia on YOLO patches.
         self.segmentation_model = None
         # Pixel size => tuple (pixel size, unit).
         self.calibration = None
@@ -63,10 +63,11 @@ class MicrogliaAnalyzer(object):
     def set_calibration(self, pixel_size, unit):
         self.calibration = (pixel_size, unit)
 
-    def set_segmentation_model(self, model_name):
-        pass
+    def set_segmentation_model(self, model_path):
+        best_path = os.path.join(model_path, )
+        self.segmentation_model
 
-    def set_classification_model(self, model_name):
+    def set_classification_model(self, model_path):
         pass
 
     def export_patches(self):

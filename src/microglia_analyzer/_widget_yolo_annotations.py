@@ -76,7 +76,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
 
         # Label + button to select the source directory:
         self.select_root_directory_button = QPushButton("📂 Root directory")
-        self.select_root_directory_button.clicked.connect(self.select_sources_directory)
+        self.select_root_directory_button.clicked.connect(self.select_root_directory)
         layout.addWidget(self.select_root_directory_button)
 
         # Label + text box for the inputs sub-folder's name:
@@ -149,7 +149,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
 
     # ----------------- CALLBACKS -------------------------------------------
 
-    def select_sources_directory(self):
+    def select_root_directory(self):
         """
         Select the folder containing the "images" and "labels" sub-folders.
         """
@@ -158,6 +158,96 @@ class AnnotateBoundingBoxesWidget(QWidget):
             show_info("Invalid directory.")
             return
         self.set_root_directory(directory)
+
+    def set_sources_directory(self):
+        """
+        Whenever the user selects a new source directory, the content of the 'sources' folder is probed.
+        This function also checks if the 'annotations' folder exists, and creates it if not.
+        """
+        source_folder = self.inputs_name.currentText()
+        annotations_folder = source_folder + "-labels"
+        if (source_folder is None) or (source_folder == "---") or (source_folder == ""):
+            return
+        inputs_path      = os.path.join(self.root_directory, source_folder)
+        annotations_path = os.path.join(self.root_directory, annotations_folder)
+        if not os.path.isdir(inputs_path):
+            return False
+        if not os.path.isdir(annotations_path):
+            os.makedirs(annotations_path)
+        self.sources_directory     = source_folder
+        self.annotations_directory = annotations_folder
+        self.annotations_name.setText(annotations_folder)
+        self.open_sources_directory()
+
+    def add_yolo_class(self):
+        """
+        Adds a new layer representing a YOLO class.
+        """
+        class_name = self.get_new_class_name()
+        if _IMAGE_LAYER not in self.viewer.layers:
+            show_info("No image loaded.")
+            return
+        n_classes = len(self.get_classes())
+        color = _COLORS[n_classes % len(_COLORS)]
+        l = self.viewer.layers.selection.active
+        if class_name is None:
+            return
+        # Clears the selection of the current layer.
+        if (l is not None) and (l.name.startswith(_CLASS_PREFIX)):
+            l.selected_data = set()
+        self.viewer.add_shapes(
+            name=class_name,
+            edge_color=color,
+            face_color="transparent",
+            opacity=0.8,
+            edge_width=3
+        )
+    
+    def open_image(self):
+        """
+        Uses the value contained in the `self.image_selector` to find and open an image.
+        Reloads the annotations if some were already made for this image.
+        """
+        current_image = self.image_selector.currentText()
+        if (self.root_directory is None) or (current_image is None) or (current_image == "---") or (current_image == ""):
+            return
+        image_path = os.path.join(self.root_directory, self.sources_directory, current_image)
+        name, _ = os.path.splitext(current_image)
+        current_as_txt = name + ".txt"
+        labels_path = os.path.join(self.root_directory, self.annotations_directory, current_as_txt)
+        if not os.path.isfile(image_path):
+            print(f"The image: '{current_image}' doesn't exist.")
+            return
+        data = imread(image_path, **ARGS)
+        if _IMAGE_LAYER in self.viewer.layers:
+            self.viewer.layers[_IMAGE_LAYER].data = data
+            self.viewer.layers[_IMAGE_LAYER].contrast_limits = (np.min(data), np.max(data))
+            self.viewer.layers[_IMAGE_LAYER].reset_contrast_limits_range()
+        else:
+            self.viewer.add_image(data, name=_IMAGE_LAYER)
+        self.deselect_all()
+        self.restore_classes_layers()
+        self.clear_classes_layers()
+        if os.path.isfile(labels_path): # If some annotations already exist for this image.
+            self.load_annotations(labels_path)
+        self.count_boxes()
+    
+    def save_state(self):
+        """
+        Saves the current annotations (bounding-boxes) in a '.txt' file.
+        The class index corresponds to the rank of the layers in the Napari stack.
+        """
+        count = 0
+        lines = []
+        for l in self.viewer.layers:
+            if not l.name.startswith(_CLASS_PREFIX):
+                continue
+            lines += self.layer2yolo(l.name, count)
+            count += 1
+        self.write_annotations(lines)
+        self.count_boxes()
+    
+    # ----------------- METHODS -------------------------------------------
 
     def upper_corner(self, box):    
         """
@@ -237,21 +327,6 @@ class AnnotateBoundingBoxesWidget(QWidget):
             for c in self.get_classes():
                 f.write(c + "\n")
         show_info("Annotations saved.")
-    
-    def save_state(self):
-        """
-        Saves the current annotations (bounding-boxes) in a '.txt' file.
-        The class index corresponds to the rank of the layers in the Napari stack.
-        """
-        count = 0
-        lines = []
-        for l in self.viewer.layers:
-            if not l.name.startswith(_CLASS_PREFIX):
-                continue
-            lines += self.layer2yolo(l.name, count)
-            count += 1
-        self.write_annotations(lines)
-        self.count_boxes()
 
     def get_new_class_name(self):
         """
@@ -267,30 +342,6 @@ class AnnotateBoundingBoxesWidget(QWidget):
             full_name = _CLASS_PREFIX + name_candidate
         self.new_name.setText("")
         return full_name
-
-    def add_yolo_class(self):
-        """
-        Adds a new layer representing a YOLO class.
-        """
-        class_name = self.get_new_class_name()
-        if _IMAGE_LAYER not in self.viewer.layers:
-            show_info("No image loaded.")
-            return
-        n_classes = len(self.get_classes())
-        color = _COLORS[n_classes % len(_COLORS)]
-        l = self.viewer.layers.selection.active
-        if class_name is None:
-            return
-        # Clears the selection of the current layer.
-        if (l is not None) and (l.name.startswith(_CLASS_PREFIX)):
-            l.selected_data = set()
-        self.viewer.add_shapes(
-            name=class_name,
-            edge_color=color,
-            face_color="transparent",
-            opacity=0.8,
-            edge_width=3
-        )
     
     def set_root_directory(self, directory):
         """
@@ -301,31 +352,11 @@ class AnnotateBoundingBoxesWidget(QWidget):
         Args:
             - directory (str): The absolute path to the root directory.
         """
-        folders = sorted([f for f in os.listdir(directory) if os.path.isdir(os.path.join(directory, f))])
+        folders = sorted([f for f in os.listdir(directory) if (not f.endswith('-labels')) and os.path.isdir(os.path.join(directory, f))])
         folders = ["---"] + folders
         self.inputs_name.clear()
         self.inputs_name.addItems(folders)
         self.root_directory = directory
-
-    def set_sources_directory(self):
-        """
-        Whenever the user selects a new source directory, the content of the 'sources' folder is probed.
-        This function also checks if the 'annotations' folder exists, and creates it if not.
-        """
-        source_folder = self.inputs_name.currentText()
-        annotations_folder = source_folder + "-labels"
-        if (source_folder is None) or (source_folder == "---") or (source_folder == ""):
-            return
-        inputs_path      = os.path.join(self.root_directory, source_folder)
-        annotations_path = os.path.join(self.root_directory, annotations_folder)
-        if not os.path.isdir(inputs_path):
-            return False
-        if not os.path.isdir(annotations_path):
-            os.makedirs(annotations_path)
-        self.sources_directory     = source_folder
-        self.annotations_directory = annotations_folder
-        self.annotations_name.setText(annotations_folder)
-        self.open_sources_directory()
     
     def update_reader_fx(self):
         global imread
@@ -488,35 +519,6 @@ class AnnotateBoundingBoxesWidget(QWidget):
             l.mode = 'pan_zoom'
             l.selected_data = set()
 
-    def open_image(self):
-        """
-        Uses the value contained in the `self.image_selector` to find and open an image.
-        Reloads the annotations if some were already made for this image.
-        """
-        current_image = self.image_selector.currentText()
-        if (self.root_directory is None) or (current_image is None) or (current_image == "---") or (current_image == ""):
-            return
-        image_path = os.path.join(self.root_directory, self.sources_directory, current_image)
-        name, _ = os.path.splitext(current_image)
-        current_as_txt = name + ".txt"
-        labels_path = os.path.join(self.root_directory, self.annotations_directory, current_as_txt)
-        if not os.path.isfile(image_path):
-            print(f"The image: '{current_image}' doesn't exist.")
-            return
-        data = imread(image_path, **ARGS)
-        if _IMAGE_LAYER in self.viewer.layers:
-            self.viewer.layers[_IMAGE_LAYER].data = data
-            self.viewer.layers[_IMAGE_LAYER].contrast_limits = (np.min(data), np.max(data))
-            self.viewer.layers[_IMAGE_LAYER].reset_contrast_limits_range()
-        else:
-            self.viewer.add_image(data, name=_IMAGE_LAYER)
-        self.deselect_all()
-        self.restore_classes_layers()
-        self.clear_classes_layers()
-        if os.path.isfile(labels_path): # If some annotations already exist for this image.
-            self.load_annotations(labels_path)
-        self.count_boxes()
-
     def count_boxes(self):
         """
         Counts the number of boxes in each class to make sure annotations are balanced.
@@ -559,7 +561,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
                 </td>
 
                 <td style="padding: 6px;">
-                    {count} ({round((count/total_count*100) if total_count > 0 else 0, 2)}%)
+                    {count} ({round((count/total_count*100) if total_count > 0 else 0, 1)}%)
                 </td>
             </tr>
             '''
