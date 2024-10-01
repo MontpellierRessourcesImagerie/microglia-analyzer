@@ -83,6 +83,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
         inputs_name_label = QLabel("Inputs sub-folder:")
         self.inputs_name = QComboBox()
         self.inputs_name.currentIndexChanged.connect(self.set_sources_directory)
+        self.inputs_name.setEnabled(False)
         self.inputs_name.addItem("---")
         h_layout = QHBoxLayout()
         h_layout.addWidget(inputs_name_label)
@@ -113,7 +114,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
         h_laytout = QHBoxLayout()
         self.new_name = QLineEdit()
         h_laytout.addWidget(self.new_name)
-        self.add_yolo_class_button = QPushButton("🔖 New class")
+        self.add_yolo_class_button = QPushButton("🎯 New class")
         self.add_yolo_class_button.clicked.connect(self.add_yolo_class)
         h_laytout.addWidget(self.add_yolo_class_button)
         layout.addLayout(h_laytout)
@@ -335,7 +336,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
         with open(labels_path, "w") as f:
             for row in tuples:
                 f.write(" ".join(map(str, row)) + "\n")
-        with open(os.path.join(self.root_directory, os.path.basename(self.sources_directory)+"classes.txt"), "w") as f:
+        with open(os.path.join(self.root_directory, os.path.basename(self.sources_directory)+"-classes.txt"), "w") as f:
             for c in self.get_classes():
                 f.write(c + "\n")
         show_info("Annotations saved.")
@@ -368,6 +369,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
         folders = ["---"] + folders
         self.inputs_name.clear()
         self.inputs_name.addItems(folders)
+        self.inputs_name.setEnabled(len(folders) > 1)
         self.root_directory = directory
     
     def update_reader_fx(self):
@@ -472,6 +474,9 @@ class AnnotateBoundingBoxesWidget(QWidget):
         # Boxes are created according to the current image's size.
         h, w = self.viewer.layers[_IMAGE_LAYER].data.shape[_WIDTH_HEIGHT[0]:_WIDTH_HEIGHT[1]]
         class_layers = [l.name for l in self.viewer.layers if l.name.startswith(_CLASS_PREFIX)]
+        if max(data.keys()) >= len(class_layers):
+            show_info("Some classes are missing: Abort loading.")
+            return
         for c, bbox_list in data.items():
             rectangles = []
             for bbox in bbox_list:
