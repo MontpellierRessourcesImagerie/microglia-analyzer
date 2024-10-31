@@ -2,6 +2,7 @@ from qtpy.QtWidgets import (QWidget, QVBoxLayout, QLineEdit,
                             QHBoxLayout, QPushButton, QLabel,
                             QFileDialog, QComboBox, QGroupBox)
 
+from scipy.ndimage import binary_fill_holes
 from napari.utils.notifications import show_info
 
 import tifffile
@@ -14,6 +15,8 @@ import os
 _CLASS_PREFIX = "class."
 # Name of the layer containing the current image.
 _IMAGE_LAYER  = "Image"
+# Layer containing the manual annotations (masks) of microglia.
+_MASKS_LAYER  = "Masks"
 # Colors assigned to each YOLO class.
 _COLORS = [
     "#FF4D4D",
@@ -60,6 +63,8 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.sources_directory = None
         # Name of the folder in which annotations are located
         self.annotations_directory = None
+        # Name of the folder in which masks are located
+        self.masks_directory = None
         # List of images ('.tif') in the 'images' folder.
         self.images_list = []
 
@@ -143,10 +148,33 @@ class AnnotateBoundingBoxesWidget(QWidget):
 
         self.layout.addWidget(box)
 
+    def add_masks_group_ui(self):
+        box = QGroupBox("Masks")
+        layout = QVBoxLayout()
+        box.setLayout(layout)
+
+        # Button to add a new mask layer.
+        self.add_mask_button = QPushButton("🎭 Add mask")
+        self.add_mask_button.clicked.connect(self.add_mask_layer)
+        layout.addWidget(self.add_mask_button)
+
+        # Button to fill the current label.
+        self.fill_button = QPushButton("🎨 Fill label")
+        self.fill_button.clicked.connect(self.fill_current_label)
+        layout.addWidget(self.fill_button)
+
+        # Button to save the masks.
+        self.save_masks_button = QPushButton("💾 Save masks")
+        self.save_masks_button.clicked.connect(self.save_masks)
+        layout.addWidget(self.save_masks_button)
+
+        self.layout.addWidget(box)
+
     def init_ui(self):
         self.add_media_management_group_ui()
         self.add_classes_management_group_ui()
         self.add_annotations_management_group_ui()
+        self.add_masks_group_ui()
 
     # ----------------- CALLBACKS -------------------------------------------
 
@@ -167,16 +195,21 @@ class AnnotateBoundingBoxesWidget(QWidget):
         """
         source_folder = self.inputs_name.currentText()
         annotations_folder = source_folder + "-labels"
+        masks_folder = source_folder + "-masks"
         if (source_folder is None) or (source_folder == "---") or (source_folder == ""):
             return
         inputs_path      = os.path.join(self.root_directory, source_folder)
         annotations_path = os.path.join(self.root_directory, annotations_folder)
+        masks_path       = os.path.join(self.root_directory, masks_folder)
         if not os.path.isdir(inputs_path):
             return False
         if not os.path.isdir(annotations_path):
             os.makedirs(annotations_path)
+        if not os.path.isdir(masks_path):
+            os.makedirs(masks_path)
         self.sources_directory     = source_folder
         self.annotations_directory = annotations_folder
+        self.masks_directory       = masks_path
         self.annotations_name.setText(annotations_folder)
         self.open_sources_directory()
 
@@ -210,12 +243,15 @@ class AnnotateBoundingBoxesWidget(QWidget):
         Reloads the annotations if some were already made for this image.
         """
         current_image = self.image_selector.currentText()
+        self.clear_mask()
         if (self.root_directory is None) or (current_image is None) or (current_image == "---") or (current_image == ""):
             return
         image_path = os.path.join(self.root_directory, self.sources_directory, current_image)
         name, _ = os.path.splitext(current_image)
         current_as_txt = name + ".txt"
+        current_as_tif = name + ".tif"
         labels_path = os.path.join(self.root_directory, self.annotations_directory, current_as_txt)
+        masks_path = os.path.join(self.root_directory, self.masks_directory, current_as_tif)
         if not os.path.isfile(image_path):
             print(f"The image: '{current_image}' doesn't exist.")
             return
@@ -234,6 +270,15 @@ class AnnotateBoundingBoxesWidget(QWidget):
         if os.path.isfile(labels_path): # If some annotations already exist for this image.
             self.load_annotations(labels_path)
         self.count_boxes()
+        if os.path.isfile(masks_path):
+            self.restore_mask_layer(masks_path)
+    
+    def restore_mask_layer(self, masks_path):
+        data = tifffile.imread(masks_path)
+        if _MASKS_LAYER in self.viewer.layers:
+            self.viewer.layers[_MASKS_LAYER].data = data
+        else:
+            self.viewer.add_labels(data, name=_MASKS_LAYER)
     
     def save_state(self):
         """
@@ -250,7 +295,43 @@ class AnnotateBoundingBoxesWidget(QWidget):
         self.write_annotations(lines)
         self.count_boxes()
     
+    def add_mask_layer(self):
+        if not self.is_image_opened():
+            return
+        shape = self.viewer.layers[_IMAGE_LAYER].data.shape[_WIDTH_HEIGHT[0]:_WIDTH_HEIGHT[1]]
+        self.viewer.add_labels(np.zeros(shape, dtype=np.uint8), name=_MASKS_LAYER)
+
+    def save_masks(self):
+        name, _ = os.path.splitext(self.image_selector.currentText())
+        current_as_tif = name + ".tif"
+        mask_path = os.path.join(self.masks_directory, current_as_tif)
+        if _MASKS_LAYER in self.viewer.layers:
+            tifffile.imwrite(mask_path, self.viewer.layers[_MASKS_LAYER].data)
+            show_info("Masks saved.")
+    
     # ----------------- METHODS -------------------------------------------
+
+    def is_image_opened(self):
+        """
+        Checks if an image is currently opened in the Napari viewer.
+        """
+        return (_IMAGE_LAYER in self.viewer.layers) and (self.viewer.layers[_IMAGE_LAYER].data is not None) and len(self.viewer.layers[_IMAGE_LAYER].data) > 0
+
+    def clear_mask(self):
+        """
+        Clears the mask layer.
+        """
+        if _MASKS_LAYER in self.viewer.layers:
+            self.viewer.layers[_MASKS_LAYER].data = np.zeros_like(self.viewer.layers[_IMAGE_LAYER].data)
+
+    def fill_current_label(self):
+        if not _MASKS_LAYER in self.viewer.layers:
+            return
+        current_label = self.viewer.layers[_MASKS_LAYER].selected_label
+        mask = self.viewer.layers[_MASKS_LAYER].data == current_label
+        filled = binary_fill_holes(mask) > 0
+        filled = filled.astype(np.uint8) * current_label
+        self.viewer.layers[_MASKS_LAYER].data = np.maximum(self.viewer.layers[_MASKS_LAYER].data, filled)
 
     def upper_corner(self, box):    
         """

@@ -31,10 +31,10 @@ def classic_workflow_test():
     mam.load_image(img_target)
     mam.set_calibration(0.325, "µm")
     mam.export_patches()
-    return
-    mam.set_segmentation_model("µnet-v002")
-    mam.set_classification_model("µyolo-V005")
+    mam.set_segmentation_model("/home/benedetti/Documents/projects/2060-microglia/µnet/µnet-V004")
     mam.segment_microglia()
+    return
+    mam.set_classification_model("µyolo-V005")
     mam.classify_microglia()
     mam.make_skeletons()
     mam.extract_metrics()

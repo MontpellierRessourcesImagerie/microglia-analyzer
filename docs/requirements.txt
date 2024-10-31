@@ -1,0 +1,16 @@
+qtpy
+pyqt5
+pytest
+opencv-python-headless
+napari[all]
+cellpose 
+scipy 
+termcolor 
+Sphinx 
+sphinx-rtd-theme 
+sphinx-tabs 
+scikit-image 
+myst-parser 
+docstring-parser
+stardist
+tensorflow[and-cuda]

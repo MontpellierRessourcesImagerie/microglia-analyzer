@@ -33,6 +33,8 @@ dependencies = [
     "tifffile"
 ]
 
+# Required for documentation: tabs, sphinx_sphinx, myst_parser, sphinx_rtd_theme
+
 [project.optional-dependencies]
 testing = [
     "tox",

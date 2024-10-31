@@ -25,7 +25,7 @@ Before starting using this script, please make sure that:
 
 """
 
-- `data_folder`      : Folder in which we can find the images and annotations folders.
+- `data_folder`      : Folder in which we can find the images and annotations folders, as well as the 'classes.txt' file.
 - `qc_folder`        : Folder in which we can find the quality control images and masks folders.
 - `inputs_name`      : Name of the folder containing the input images (name of the folder in `data_folder` and `qc_folder`.).
 - `annotations_name` : Name of the folder containing the annotations (name of the folder in `data_folder` and `qc_folder`.).
@@ -50,21 +50,21 @@ Before starting using this script, please make sure that:
 
 #@markdown ## 📍 a. Data paths
 
-data_folder       = "/home/benedetti/Documents/projects/2060-microglia/training-data/"
+data_folder       = "/home/benedetti/Documents/projects/2060-microglia/yolo-user-annotations/"
 qc_folder         = None
 inputs_name       = "images"
 annotations_name  = "labels"
-models_path       = "/home/benedetti/Desktop/eaudissect/yolo_working/models"
-working_directory = "/home/benedetti/Desktop/eaudissect/yolo_local"
-model_name_prefix = "YOLOv5-mg"
+models_path       = "/home/benedetti/Documents/projects/2060-microglia/yolo-models/"
+working_directory = "/home/benedetti/Documents/projects/2060-microglia/yolo-runs/"
+model_name_prefix = "µyolo"
 reset_local_data  = True
 
 #@markdown ## 📍 b. Network architecture
 
-validation_percentage = 0.2
-batch_size            = 16
+validation_percentage = 0.15
+batch_size            = 24
 epochs                = 1800
-classes_names         = ["Debris", "Microglia"]
+classes_names         = ["garbage", "amoeboid", "rod", "intermediate", "homeostatic"]
 optimizer             = 'Adam'
 learning_rate         = 0.001
 
@@ -326,6 +326,10 @@ def migrate_data(targets, source, tuples):
         )
         last += n
 
+def get_image_size():
+    training_input_path = os.path.join(working_directory, "training", inputs_name)
+    image = imread(os.path.join(training_input_path, os.listdir(training_input_path)[0]))
+    return max(image.shape[0], image.shape[1])
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                            PREPARE TRAINING                                     #
@@ -450,8 +454,11 @@ def main():
         epochs=epochs,
         batch_size=batch_size,
         project=models_path,
-        name=version_name
+        name=version_name,
+        imgsz=get_image_size(),
+        optimizer=optimizer
     )
+    # label_smoothing
 
 
 if __name__ == "__main__":
