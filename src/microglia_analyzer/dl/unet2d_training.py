@@ -5,19 +5,25 @@ import matplotlib.pyplot as plt
 import os
 import shutil
 import re
+import json
 
-from scipy.ndimage import rotate
+from scipy.ndimage import rotate, gaussian_filter
+from skimage.morphology import binary_dilation, diamond, skeletonize
 import pandas as pd
 from tabulate import tabulate
 
+from microglia_analyzer.dl.losses import (dice_loss, bce_dice_loss, 
+                                          skeleton_recall, dice_skeleton_loss)
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 import tensorflow as tf
 from tensorflow.keras.models import Model
-from tensorflow.keras.callbacks import (ModelCheckpoint, EarlyStopping,
-                                        ReduceLROnPlateau, TensorBoard, Callback)
-from tensorflow.keras.layers import (Input, Conv2D, MaxPooling2D, Dropout,
-                                     UpSampling2D, concatenate, Activation)
+from tensorflow.keras.callbacks import (ModelCheckpoint, EarlyStopping, 
+                                        ReduceLROnPlateau, Callback)
+from tensorflow.keras.layers import (Input, Conv2D, MaxPooling2D, Dropout, BatchNormalization,
+                                     UpSampling2D, concatenate, Activation, Conv2DTranspose)
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import plot_model
 from tensorflow.keras.losses import BinaryCrossentropy
@@ -60,38 +66,45 @@ from tensorflow.keras.losses import BinaryCrossentropy
 
 #@markdown ## 📍 a. Data paths
 
-data_folder       = "/home/benedetti/Documents/projects/2060-microglia/data/unet-training/"
+data_folder       = "/home/benedetti/Documents/projects/2060-microglia/data/training-data/clean"
 qc_folder         = None
-inputs_name       = "images"
+inputs_name       = "inputs"
 masks_name        = "masks"
-models_path       = "/home/benedetti/Documents/projects/2060-microglia/data/unet-training/models/"
+models_path       = "/home/benedetti/Documents/projects/2060-microglia/µnet"
 working_directory = "/tmp/unet_working/"
 model_name_prefix = "µnet"
 reset_local_data  = True
-remove_wrong_data = True
+remove_wrong_data = False
+data_usage        = None
 
 #@markdown ## 📍 b. Network architecture
 
 validation_percentage = 0.15
-batch_size            = 32
-epochs                = 50
-unet_depth            = 4
-num_filters_start     = 16
-dropout_rate          = 0.25
+batch_size            = 8
+epochs                = 500
+unet_depth            = 2
+num_filters_start     = 24
+dropout_rate          = 0.2
 optimizer             = 'Adam'
-learning_rate         = 0.0001
+learning_rate         = 0.001
+skeleton_coef         = 0.2
+bce_coef              = 0.7
+early_stop_patience   = 50
+dilation_kernel       = diamond(1)
+loss                  = dice_skeleton_loss(skeleton_coef, bce_coef)
 
 #@markdown ## 📍 c. Data augmentation
 
 use_data_augmentation = True
 use_mirroring         = True
 use_gaussian_noise    = True
+noise_scale           = 0.001
 use_random_rotations  = True
-angle_range           = (-30, 30)
+angle_range           = (-90, 90)
 use_gamma_correction  = True
-gamma_range           = (0.2, 4.0)
-show_preview          = False
-
+gamma_range           = (0.2, 5.0)
+use_holes             = False
+export_aug_sample     = True
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                            SANITY CHECK                                         #
@@ -347,8 +360,9 @@ def create_local_dirs(reset=False):
     Args:
         reset (bool): If True, the folders will be reset.
     """
-    if not os.path.isdir(working_directory):
-        raise ValueError(f"Working directory '{working_directory}' does not exist.")
+    if os.path.isdir(working_directory) and reset:
+        shutil.rmtree(working_directory)
+    os.makedirs(working_directory, exist_ok=True)
     leaves = [inputs_name, masks_name]
     for r in _LOCAL_FOLDERS:
         for l in leaves:
@@ -379,6 +393,22 @@ def check_sum(targets):
     acc = sum([i[1] for i in targets])
     return abs(acc - 1.0) < 1e-6
 
+def restore_data_usage(targets, source):
+    """
+    Restores the data usage from a JSON file.
+    """
+    with open(data_usage, "r") as f:
+        data = json.load(f)
+        for target, _ in targets:
+            files = data[target]
+            for f in files:
+                src_path = os.path.join(source, inputs_name, f)
+                dst_path = os.path.join(working_directory, target, inputs_name, f)
+                shutil.copy(src_path, dst_path)
+                src_path = os.path.join(source, masks_name, f)
+                dst_path = os.path.join(working_directory, target, masks_name, f)
+                shutil.copy(src_path, dst_path)
+
 def migrate_data(targets, source):
     """
     Copies the content of the source folder to the working directory.
@@ -389,6 +419,9 @@ def migrate_data(targets, source):
         targets (list): List of tuples. The first element is the name of the folder, the second is the ratio of the data to move.
         source (str): The source folder
     """
+    if data_usage is not None:
+        restore_data_usage(targets, source)
+        return
     if not check_sum(targets):
         raise ValueError("The sum of the ratios must be equal to 1.")
     folders = [inputs_name, masks_name]
@@ -410,6 +443,26 @@ def migrate_data(targets, source):
 #@markdown # ⭐ 4. DATA AUGMENTATION
 
 #@markdown ## 📍 a. Data augmentation functions
+
+def deteriorate_image(image, mask, num_points=25):
+    """
+    Attempts to deteriorate the original image by making holes along the path.
+    """
+    image = np.squeeze(image)
+    mask = np.squeeze(mask)
+    positive_points = np.argwhere(mask > 0)
+    if len(positive_points) < num_points:
+        selected_points = positive_points
+    else:
+        selected_points = positive_points[np.random.choice(len(positive_points), num_points, replace=False)]
+    
+    new_image = np.full_like(mask, 0, dtype=np.uint8)
+    for point in selected_points:
+        new_image[point[0], point[1]] = 255
+    new_image = 1.0 - binary_dilation(new_image, footprint=dilation_kernel).astype(np.float32)
+    new_image = gaussian_filter(new_image, sigma=2.0)
+    image *= new_image
+    return np.expand_dims(image, axis=-1), np.expand_dims(mask, axis=-1)
 
 def random_flip(image, mask):
     """
@@ -470,6 +523,22 @@ def gamma_correction(image, mask):
     
     return image, mask
 
+def add_gaussian_noise(image, mask):
+    """
+    Adds random Gaussian noise to the image. The mask remains unchanged.
+    
+    Args:
+        image (np.ndarray): The input image.
+        mask (np.ndarray): The input mask.
+        
+    Returns:
+        (np.ndarray, np.ndarray): The noisy image and the unchanged mask.
+    """
+    noise = np.random.normal(0, noise_scale, image.shape)
+    noisy_image = image + noise
+    
+    return noisy_image, mask
+
 def normalize(image, mask):
     """
     Normalizes the image values to be between 0 and 1. The mask remains unchanged.
@@ -503,32 +572,34 @@ def apply_data_augmentation(image, mask):
         image, mask = random_flip(image, mask)
     if use_random_rotations:
         image, mask = random_rotation(image, mask)
+    if use_holes:
+        image, mask = deteriorate_image(image, mask)
     if use_gamma_correction:
         image, mask = gamma_correction(image, mask)
+    if use_gaussian_noise:
+        image, mask = add_gaussian_noise(image, mask)
     image, mask = normalize(image, mask)
     return image, mask
 
 #@markdown ## 📍 b. Datasets visualization
 
-def visualize_augmentations(num_examples=5):
+def visualize_augmentations(model_path, num_examples=6):
     """
     Visualizes original and augmented images side by side.
     
     Args:
         num_examples (int): The number of examples to visualize.
     """
-    s = get_shape()
-    ds = make_dataset("training", True).batch(1).take(num_examples)
-
+    dataset   = make_dataset("training", True).batch(1).take(num_examples)
     grid_size = (2, num_examples)
-    fig, axes = plt.subplots(*grid_size, figsize=(15, 6))
+    _, axes   = plt.subplots(*grid_size, figsize=(15, 6))
 
-    for i, (augmented_image, original_image) in enumerate(ds):
+    for i, (augmented_image, original_image) in enumerate(dataset):
         if i >= num_examples:
             break
         
         augmented_image = augmented_image[0].numpy()
-        original_image = original_image[0].numpy()
+        original_image  = original_image[0].numpy()
         
         axes[0, i].imshow(original_image)
         axes[0, i].set_title(f"Mask {i+1}")
@@ -539,7 +610,10 @@ def visualize_augmentations(num_examples=5):
         axes[1, i].axis('off')
 
     plt.tight_layout()
-    plt.show()
+    plot_path = os.path.join(model_path, "augmentations_preview.png")
+    plt.savefig(plot_path, format='png', dpi=400)
+    plt.clf()
+    print(f"📊 Augmentations preview saved to: {plot_path}")
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -553,12 +627,16 @@ def visualize_augmentations(num_examples=5):
 def open_pair(input_path, mask_path, training, img_only):
     raw_img = tifffile.imread(input_path)
     raw_img = np.expand_dims(raw_img, axis=-1)
-    raw_mask = (tifffile.imread(mask_path) > 0).astype(np.uint8)
+    raw_mask = tifffile.imread(mask_path)
+    raw_mask = skeletonize(raw_mask)
+    raw_mask = binary_dilation(raw_mask)
+    raw_mask = raw_mask.astype(np.float32)
+    raw_mask /= np.max(raw_mask)
     raw_mask = np.expand_dims(raw_mask, axis=-1)
     if training:
         raw_img, raw_mask = apply_data_augmentation(raw_img, raw_mask)
     image = tf.constant(raw_img, dtype=tf.float32)
-    mask = tf.constant(raw_mask, dtype=tf.uint8)
+    mask = tf.constant(raw_mask, dtype=tf.float32)
     if img_only:
         return image
     else:
@@ -580,7 +658,7 @@ def make_dataset(source, training=False, img_only=False):
     
     output_signature=tf.TensorSpec(shape=shape, dtype=tf.float32, name=None)
     if not img_only:
-        output_signature = (output_signature, tf.TensorSpec(shape=shape, dtype=tf.uint8, name=None))
+        output_signature = (output_signature, tf.TensorSpec(shape=shape, dtype=tf.float32, name=None))
     
     ds = tf.data.Dataset.from_generator(
         pairs_generator,
@@ -604,6 +682,37 @@ def test_ds_consumer():
         print(f"{str(i+1).zfill(2)}: ", image.shape)
     
     print("\nDONE.")
+
+def make_data_augmentation_sample(n_samples=100):
+    """
+    Applies the data augmentation pipeline to n_samples images and saves them to a folder.
+    The folder folder is located into the working_directory.
+    """
+    sample_folder = os.path.join(working_directory, "augmentation_sample")
+    if os.path.isdir(sample_folder):
+        shutil.rmtree(sample_folder)
+    os.makedirs(sample_folder, exist_ok=True)
+    ds = make_dataset("training", True)
+    for i, (img, mask) in enumerate(ds.repeat().take(n_samples)):
+        img = img.numpy()
+        mask = mask.numpy()
+        aug_img, _ = apply_data_augmentation(img, mask)
+        combined_img = np.concatenate((img.squeeze(), aug_img.squeeze()), axis=1)
+        tifffile.imwrite(os.path.join(sample_folder, f"img_{str(i).zfill(3)}.tif"), combined_img)
+
+
+def export_data_usage(model_path):
+    """
+    Produces a JSON explaining to which category belongs every file of the provided data (training, validation, testing).
+    It consists in a dictionary where keys are the categories and values are lists of files.
+    """
+    categories = {"training": [], "validation": [], "testing": []}
+    for category in _LOCAL_FOLDERS:
+        _, files = get_data_pools(os.path.join(working_directory, category), [inputs_name], True)
+        categories[category] = list(files)
+    json_string = json.dumps(categories, indent=4)
+    with open(os.path.join(model_path, "data_usage.json"), "w") as f:
+        f.write(json_string)
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -640,89 +749,54 @@ def create_unet2d_model(input_shape):
     inputs = Input(shape=input_shape)
     x = inputs
 
-    # Encoder:
+    # --- Encoder ---
     skip_connections = []
     for i in range(unet_depth):
         num_filters = num_filters_start * 2**i
-        x = Conv2D(num_filters, 3, padding='same', kernel_initializer='he_normal')(x)
-        x = Activation('relu')(x) 
-        x = Conv2D(num_filters, 3, padding='same', kernel_initializer='he_normal')(x)
-        x = Activation('relu')(x) 
+        coef = (unet_depth - i - 1) / unet_depth
+        x = Conv2D(num_filters, 3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
+        x = BatchNormalization()(x)
+        x = Conv2D(num_filters, 3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
+        x = BatchNormalization()(x)
         skip_connections.append(x)
+        x = Dropout(coef * dropout_rate)(x)
         x = MaxPooling2D(2)(x)
-        x = Dropout(dropout_rate)(x)
+    
+    # --- Bottleneck ---
+    num_filters = num_filters_start * 2**unet_depth
+    x = Conv2D(num_filters, 3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
+    x = BatchNormalization()(x)
+    x = Conv2D(num_filters, 3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
+    x = BatchNormalization()(x)
 
-    # Decoder:
+    # --- Decoder ---
     for i in reversed(range(unet_depth)):
         num_filters = num_filters_start * 2**i
         x = UpSampling2D(2)(x)
+        x = Conv2DTranspose(num_filters, (3, 3), strides=(1, 1), padding='same')(x)
         x = concatenate([x, skip_connections[i]])
-        x = Conv2D(num_filters, 3, padding='same', kernel_initializer='he_normal')(x)
-        x = Activation('relu')(x) 
-        x = Conv2D(num_filters, 3, padding='same', kernel_initializer='he_normal')(x)
-        x = Activation('relu')(x) 
-        x = Dropout(dropout_rate)(x)
+        x = Conv2D(num_filters, 3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
+        # x = BatchNormalization()(x)
+        x = Conv2D(num_filters, 3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
+        # x = BatchNormalization()(x)
 
-    # Output layer with sigmoid for binary classification
     outputs = Conv2D(1, 1, activation='sigmoid')(x)
-
     model = Model(inputs=inputs, outputs=outputs)
     return model
 
 
-#@markdown ## 📍 c. Alternative loss functions
-
-def jaccard_loss(y_true, y_pred):
-    y_true = tf.cast(y_true, tf.float32)
-    y_pred = tf.cast(y_pred, tf.float32)
-    intersection = tf.reduce_sum(y_true * y_pred)
-    union = tf.reduce_sum(y_true) + tf.reduce_sum(y_pred) - intersection
-    return 1 - (intersection + 1) / (union + 1)
-
-def dice_loss(y_true, y_pred):
-    y_true = tf.cast(y_true, tf.float32)
-    y_pred = tf.cast(y_pred, tf.float32)
-    intersection = tf.reduce_sum(y_true * y_pred)
-    return 1 - (2. * intersection + 1) / (tf.reduce_sum(y_true) + tf.reduce_sum(y_pred) + 1)
-
-def bce_dice_loss(y_true, y_pred):
-    bce = tf.keras.losses.binary_crossentropy(y_true, y_pred)
-    dice = dice_loss(y_true, y_pred)
-    return bce + dice
-
-def focal_loss(gamma=2., alpha=0.25):
-    def focal_loss_fixed(y_true, y_pred):
-        y_true = tf.cast(y_true, tf.float32)
-        y_pred = tf.cast(y_pred, tf.float32)
-        alpha_t = y_true * alpha + (1 - y_true) * (1 - alpha)
-        p_t = y_true * y_pred + (1 - y_true) * (1 - y_pred)
-        fl = - alpha_t * (1 - p_t) ** gamma * tf.math.log(p_t + 1e-5)
-        return tf.reduce_mean(fl)
-    return focal_loss_fixed
-
-def tversky_loss(alpha=0.5, beta=0.5):
-    def loss(y_true, y_pred):
-        y_true = tf.cast(y_true, tf.float32)
-        y_pred = tf.cast(y_pred, tf.float32)
-        true_pos = tf.reduce_sum(y_true * y_pred)
-        false_neg = tf.reduce_sum(y_true * (1 - y_pred))
-        false_pos = tf.reduce_sum((1 - y_true) * y_pred)
-        return 1 - (true_pos + 1) / (true_pos + alpha * false_neg + beta * false_pos + 1)
-    return loss
-
-#@markdown ## 📍 d. Model instanciator
+#@markdown ## 📍 c. Model instanciator
 
 def instanciate_model():
     input_shape = get_shape()
     model = create_unet2d_model(input_shape)
     model.compile(
-        optimizer=Adam(learning_rate=learning_rate), 
-        loss=bce_dice_loss, 
+        optimizer=Adam(learning_rate=learning_rate),
+        loss=loss, 
         metrics=[
             tf.keras.metrics.Precision(),
             tf.keras.metrics.Recall(),
-            tf.keras.metrics.Accuracy(),
-            tf.keras.metrics.MeanIoU(num_classes=2)
+            tf.keras.metrics.Accuracy()
         ]
     )
     return model
@@ -737,7 +811,7 @@ def instanciate_model():
 #@markdown ## 📍 a. Creating callback for validation
 
 class SavePredictionsCallback(Callback):
-    def __init__(self, num_examples=5):
+    def __init__(self, model_path, num_examples=5):
         """
         Custom callback to save predictions to images at the end of each epoch.
 
@@ -750,6 +824,7 @@ class SavePredictionsCallback(Callback):
         self.validation_data = make_dataset("validation", False)
         self.output_dir = os.path.join(working_directory, "predictions")
         self.num_examples = num_examples
+        self.model_path = model_path
 
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
@@ -757,45 +832,100 @@ class SavePredictionsCallback(Callback):
     def on_epoch_end(self, epoch, logs=None):
         val_images, val_masks = next(iter(self.validation_data.batch(self.num_examples)))
         predictions = self.model.predict(val_images)
-
-        # Create a subfolder for each epoch
-        epoch_dir = os.path.join(self.output_dir, f'epoch_{epoch + 1}')
+        epoch_dir = os.path.join(self.output_dir, f'epoch_{str(epoch + 1).zfill(3)}')
         if not os.path.exists(epoch_dir):
             os.makedirs(epoch_dir)
 
-        # Save the results (input, predicted mask, and ground truth mask)
-        for i in range(self.num_examples):
+        num_samples = min(self.num_examples, len(val_images))
+
+        for i in range(num_samples):
             tifffile.imwrite(os.path.join(epoch_dir, f'input_{str(i + 1).zfill(5)}.tif'), val_images[i].numpy())
             tifffile.imwrite(os.path.join(epoch_dir, f'mask_{str(i + 1).zfill(5)}.tif'), val_masks[i].numpy())
             tifffile.imwrite(os.path.join(epoch_dir, f'prediction_{str(i + 1).zfill(5)}.tif'), predictions[i])
+    
+    def on_train_end(self, logs=None):
+        # Move the last predictions into the model folder.
+        all_epochs = sorted([f for f in os.listdir(self.output_dir) if f.startswith('epoch')])
+        if len(all_epochs) == 0:
+            return
+        last_epoch = all_epochs[-1]
+        last_epoch_path = os.path.join(self.output_dir, last_epoch)
+        last_epoch_dest = os.path.join(self.model_path, "predictions")
+        os.makedirs(last_epoch_dest, exist_ok=True)
+        shutil.move(last_epoch_path, last_epoch_dest)
             
 
 #@markdown ## 📍 b. Training launcher
 
-def train_model(model, train_dataset, val_dataset):
-    # Path of the folder in which the model is exported.
+import math
+
+def get_model_path():
     v = get_version()
     version_name = f"{model_name_prefix}-V{str(v).zfill(3)}"
     output_path = os.path.join(models_path, version_name)
     os.makedirs(output_path)
-    plot_model(model, to_file=os.path.join(output_path, 'architecture.png'), show_shapes=True)
+    return output_path
 
+def cosine_annealing(epoch, _):
+    period = 50
+    alpha = 0.0
+    cosine_decay = 0.5 * (1 + math.cos(math.pi * (epoch % period) / period))
+    decayed = (1 - alpha) * cosine_decay + alpha
+    return float(learning_rate * decayed)
+
+def train_model(model, train_dataset, val_dataset, output_path):
+    plot_model(model, to_file=os.path.join(output_path, 'architecture.png'), show_shapes=True)
     print(f"💾 Exporting model to: {output_path}")
 
     checkpoint = ModelCheckpoint(os.path.join(output_path, 'best.keras'), save_best_only=True, monitor='val_loss', mode='min')
-    early_stopping = EarlyStopping(monitor='val_loss', patience=10, mode='min')
+    lastpoint = ModelCheckpoint(os.path.join(output_path, 'last.keras'), save_best_only=False, monitor='val_loss', mode='min')
+    early_stopping = EarlyStopping(monitor='val_loss', patience=early_stop_patience, mode='min')
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=1e-6, mode='min')
+    lr_callback = tf.keras.callbacks.LearningRateScheduler(cosine_annealing)
 
     history = model.fit(
         train_dataset,
         validation_data=val_dataset,
         epochs=epochs,
-        callbacks=[checkpoint, early_stopping, reduce_lr, SavePredictionsCallback()],
+        callbacks=[checkpoint, lastpoint, early_stopping, lr_callback, SavePredictionsCallback(output_path)],
         verbose=1
     )
 
-    model.save(os.path.join(output_path, 'last.keras'))
     return history
+
+
+def export_settings(model_path):
+    settings_dict = {
+        "Data folder"        : os.path.basename(data_folder),
+        "QC folder"          : os.path.basename(qc_folder) if qc_folder is not None else "None",
+        "Inputs"             : inputs_name,
+        "Masks"              : masks_name,
+        "Validation (%)"     : validation_percentage,
+        "Batch size"         : batch_size,
+        "# epochs"           : epochs,
+        "UNet depth"         : unet_depth,
+        "# filters"          : num_filters_start,
+        "Dropout (%)"        : dropout_rate,
+        "Optimizer"          : optimizer,
+        "Learning rate"      : learning_rate,
+        "Skeleton (%)"       : skeleton_coef,
+        "BCE (%)"            : bce_coef,
+        "Early stop patience": early_stop_patience,
+        "Dilation kernel"    : str(dilation_kernel),
+        "Data augmentation"  : use_data_augmentation,
+        "Mirroring"          : use_mirroring,
+        "Gaussian noise"     : use_gaussian_noise,
+        "Noise scale"        : noise_scale,
+        "Random rotations"   : use_random_rotations,
+        "Angle range"        : angle_range,
+        "Gamma correction"   : use_gamma_correction,
+        "Gamma range"        : gamma_range,
+        "Holes"              : use_holes,
+        "Loss function"      : loss.__name__
+    }
+    json_string = json.dumps(settings_dict, indent=4)
+    with open(os.path.join(model_path, "settings.json"), "w") as f:
+        f.write(json_string)
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -804,7 +934,7 @@ def train_model(model, train_dataset, val_dataset):
 
 #@markdown # ⭐ 8. EVALUATE THE MODEL
 
-def plot_training_history(history):
+def plot_training_history(history, model_path):
     """
     Plots the training and validation metrics from the model's history.
 
@@ -815,7 +945,7 @@ def plot_training_history(history):
     metrics = history.history
     
     # Create subplots
-    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    _, axes = plt.subplots(2, 2, figsize=(12, 10))
     
     # Plot Training and Validation Loss
     axes[0, 0].plot(metrics['loss'], label='Training Loss')
@@ -847,7 +977,7 @@ def plot_training_history(history):
 
     # Adjust layout
     plt.tight_layout()
-    plt.show()
+    plt.savefig(os.path.join(model_path, 'training_history.png'), format='png', dpi=400)
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -856,7 +986,6 @@ def plot_training_history(history):
 
 
 def main():
-    from pprint import pprint
 
     # 1. Running the sanity checks
     data_sanity, results = sanity_check(data_folder)
@@ -892,16 +1021,20 @@ def main():
             ], qc_folder)
     
     # 3. Preview the effects of data augmentation
-    if show_preview:
-        visualize_augmentations()
-
+    model_path = get_model_path()
+    export_data_usage(model_path)
+    export_settings(model_path)
+    visualize_augmentations(model_path)
+    if export_aug_sample:
+        make_data_augmentation_sample()
+    
     # 4. Creating the model
     model = instanciate_model()
     model.summary()
 
     # 5. Create the datasets
     training_dataset   = make_dataset("training", True).repeat().batch(batch_size).take(batch_size)
-    validation_dataset = make_dataset("validation", False).repeat().batch(16).take(16)
+    validation_dataset = make_dataset("validation", False).repeat().batch(batch_size).take(batch_size)
     print(f"   • Training dataset: {len(list(training_dataset))} ({training_dataset}).")
     print(f"   • Validation dataset: {len(list(validation_dataset))} ({validation_dataset}).")
     
@@ -913,7 +1046,9 @@ def main():
         print("   • No testing dataset provided.")
     
     # 6. Training the model
-    history = train_model(model, training_dataset, validation_dataset)
+    history = train_model(model, training_dataset, validation_dataset, model_path)
+    plot_training_history(history, model_path)
+
 
 if __name__ == "__main__":
     main()

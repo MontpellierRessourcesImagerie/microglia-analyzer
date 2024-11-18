@@ -65,8 +65,20 @@ validation_percentage = 0.15
 batch_size            = 24
 epochs                = 1800
 classes_names         = ["garbage", "amoeboid", "rod", "intermediate", "homeostatic"]
-optimizer             = 'Adam'
-learning_rate         = 0.001
+optimizer             = 'AdamW'
+learning_rate         = 0.0001
+deterministic         = True
+cos_lr                = True
+label_smoothing       = 0.0
+overlap_mask          = False
+dropout               = 0.2
+
+# optimizer: 'SGD', 'Adam', 'AdamW'.
+# deterministic: True, False
+# cos_lr: True, False
+# label_smoothing: 0.0, 0.1, 0.2, 0.3, 0.4, 0.5
+# overlap_mask: True, False
+# dropout: 0.0, 0.1, 0.2, 0.3, 0.4, 0.5
 
 #@markdown ## 📍 c. Constants
 
@@ -456,9 +468,20 @@ def main():
         project=models_path,
         name=version_name,
         imgsz=get_image_size(),
-        optimizer=optimizer
+        optimizer=optimizer,
+        deterministic=deterministic,
+        cos_lr=cos_lr,
+        label_smoothing=label_smoothing,
+        overlap_mask=overlap_mask,
+        dropout=dropout,
+        lr0=learning_rate
     )
-    # label_smoothing
+    # optimizer: 'SGD', 'Adam', 'AdamW', 'NAdam', 'RAdam', 'RMSProp'.
+    # deterministic: True, False
+    # cos_lr: True, False
+    # label_smoothing: 0.0, 0.1, 0.2, 0.3, 0.4, 0.5
+    # overlap_mask: True, False
+    # dropout: 0.0, 0.1, 0.2, 0.3, 0.4, 0.5
 
 
 if __name__ == "__main__":

@@ -178,12 +178,6 @@ class ImageTiler2D(object):
         """
         return self.grid_size
     
-    def get_blending_tiles(self):
-        """
-        Returns the list containing the blending tiles.
-        """
-        return self.blending_coefs
-    
     def _process_grid_size(self):
         """
         Processes the final number of tiles on each axis, taking into account the overlap.

@@ -322,7 +322,7 @@ class AnnotateBoundingBoxesWidget(QWidget):
         Clears the mask layer.
         """
         if _MASKS_LAYER in self.viewer.layers:
-            self.viewer.layers[_MASKS_LAYER].data = np.zeros_like(self.viewer.layers[_IMAGE_LAYER].data)
+            self.viewer.layers[_MASKS_LAYER].data = np.zeros_like(self.viewer.layers[_MASKS_LAYER].data)
 
     def fill_current_label(self):
         if not _MASKS_LAYER in self.viewer.layers:

@@ -21,12 +21,12 @@ sys.path.insert(0, mod_path)
 
 # -- Project information -----------------------------------------------------
 
-project = 'Protoplasts swelling analyzer'
+project   = 'Microglia Analyzer'
 copyright = '2024, Clément H. Benedetti'
-author = 'Clément H. BENEDETTI'
+author    = 'Clément H. BENEDETTI'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0.0'
+release = '0.0.1'
 
 
 # -- General configuration ---------------------------------------------------

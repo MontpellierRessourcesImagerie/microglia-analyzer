@@ -19,7 +19,7 @@ import os
 import re
 
 from microglia_analyzer import TIFF_REGEX
-from microglia_analyzer.microglia_analyzer import MicrogliaAnalyzer
+from microglia_analyzer.ma_worker import MicrogliaAnalyzer
 
 
 _IMAGE_LAYER_NAME = "µ-Image"

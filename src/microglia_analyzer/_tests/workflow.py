@@ -1,6 +1,6 @@
 import tifffile
 import os
-from microglia_analyzer.microglia_analyzer import MicrogliaAnalyzer
+from microglia_analyzer.ma_worker import MicrogliaAnalyzer
 from microglia_analyzer.tiles import tiler
 
 
