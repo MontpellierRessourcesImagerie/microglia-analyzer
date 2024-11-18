@@ -41,6 +41,9 @@ class Patch2D(object):
         self._check_neighbours()
         self._process_overlap()
     
+    def __str__(self):
+        return f"Patch2D({self.patch_size} > {self.ul_corner}, {self.lr_corner}, {self.overlaps})"
+
     def _process_patch(self):
         """
         From the indices on the grid, determines the upper-left and lower-right corners of the patch.
@@ -86,9 +89,9 @@ class Patch2D(object):
         if self.has_neighbour[0]:
             self.overlaps[0] = max(self.overlap, x - self.ul_corner[1])
         if self.has_neighbour[1]:
-            self.overlaps[1] = self.overlap if self.lr_corner[0] + self.patch_size <= self.shape[0] else self.shape[0] - self.lr_corner[0]
+            self.overlaps[1] = self.overlap if (self.lr_corner[0] + self.patch_size - self.overlap <= self.shape[0]) else (self.shape[0] - self.lr_corner[0])
         if self.has_neighbour[2]:
-            self.overlaps[2] = self.overlap if self.lr_corner[1] + self.patch_size <= self.shape[1] else self.shape[1] - self.lr_corner[1]
+            self.overlaps[2] = self.overlap if (self.lr_corner[1] + self.patch_size - self.overlap <= self.shape[1]) else (self.shape[1] - self.lr_corner[1])
         if self.has_neighbour[3]:
             self.overlaps[3] = max(self.overlap, y - self.ul_corner[0])
     

@@ -229,3 +229,29 @@ class ImageTiler2D(object):
             copies[i] *= coef
             canvas[p.ul_corner[0]:p.lr_corner[0], p.ul_corner[1]:p.lr_corner[1]] += copies[i]
         return canvas.astype(patches[0].dtype)
+
+
+if __name__ == "__main__":
+    import tifffile
+    from microglia_analyzer.experimental.tiles import generate_checkerboard
+
+    # checkerboard_img = np.squeeze(np.array(generate_checkerboard(2048, 2048, 16, 16)))
+    checkerboard_img = np.ones((2048, 2048), np.float32)
+    tifffile.imwrite("/tmp/exp/01-original.tif", checkerboard_img)
+
+    tiles_manager = ImageTiler2D(512, 128, checkerboard_img.shape)
+    tiles = tiles_manager.image_to_tiles(checkerboard_img)
+    tifffile.imwrite("/tmp/exp/02-tiles.tif", tiles)
+
+    merged = tiles_manager.tiles_to_image(tiles)
+    tifffile.imwrite("/tmp/exp/03-merged.tif", merged)
+
+    tifffile.imwrite("/tmp/exp/04-coefs.tif", tiles_manager.blending_coefs)
+
+    tifffile.imwrite(
+        "/tmp/exp/05-gradient.tif", 
+        tiles_manager.tiles_to_image(tiles_manager.blending_coefs)
+    )
+
+    for p in tiles_manager.layout:
+        print(p)
