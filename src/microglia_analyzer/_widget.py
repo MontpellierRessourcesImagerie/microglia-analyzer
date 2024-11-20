@@ -117,11 +117,6 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.segment_microglia_group = QGroupBox("Segmentation")
         layout = QVBoxLayout()
 
-        # Dropdown menu to choose a model
-        self.model_selector = QComboBox()
-        self.model_selector.addItem("---")
-        layout.addWidget(self.model_selector)
-
         # Minimal area of a microglia
         h_layout = QHBoxLayout()
         self.minimal_area_label = QLabel("Min area (µm²):")
@@ -216,9 +211,6 @@ class MicrogliaAnalyzerWidget(QWidget):
             return
         self.open_image(full_path)
 
-    def apply_calibration(self):
-        pass
-
     def proba_threshold_update(self):
         self.proba_value_label.setText(f"{self.probability_threshold_slider.value()}%")
 
@@ -285,7 +277,7 @@ class MicrogliaAnalyzerWidget(QWidget):
             self.viewer.layers[_IMAGE_LAYER_NAME].data = data
         else:
             self.viewer.add_image(data, name=_IMAGE_LAYER_NAME, colormap='green')
-        # self.mam.load_image(image_path)
+        self.mam.set_input_image(data)
         
     
     def convert_to_optimal_unit(self, size, unit):
@@ -318,4 +310,4 @@ class MicrogliaAnalyzerWidget(QWidget):
             layer.scale = (size, size)
         self.pixel_size_label.setText(f"Pixel size: {size:.2f} {unit}")
         self.viewer.scale_bar.visible = True
-        # self.mam.set_calibration(size, unit)
+        self.mam.set_calibration(size, unit)

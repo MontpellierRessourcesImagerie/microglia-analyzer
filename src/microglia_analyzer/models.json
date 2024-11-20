@@ -1,4 +1,10 @@
 {
-    "µnet" : "https://dev.mri.cnrs.fr/attachments/download/3574/%C2%B5net.zip",
-    "µyolo": "https://dev.mri.cnrs.fr/attachments/download/3575/%C2%B5yolo.zip"
+    "µnet" : {
+        "url": "https://dev.mri.cnrs.fr/attachments/download/3574/%C2%B5net.zip",
+        "version": 208
+    },
+    "µyolo": {
+        "url": "https://dev.mri.cnrs.fr/attachments/download/3575/%C2%B5yolo.zip",
+        "version": 51
+    }
 }
