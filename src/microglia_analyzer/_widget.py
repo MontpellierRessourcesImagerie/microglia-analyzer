@@ -14,26 +14,27 @@ from napari.utils import progress
 
 import tifffile
 import numpy as np
-import math
 import os
 import re
 
 from microglia_analyzer import TIFF_REGEX
 from microglia_analyzer.ma_worker import MicrogliaAnalyzer
-
+from microglia_analyzer.qt_workers import QtSegmentMicroglia, QtClassifyMicroglia
 
 _IMAGE_LAYER_NAME = "µ-Image"
+_SEGMENTATION_LAYER_NAME = "µ-Segmentation"
 
 class MicrogliaAnalyzerWidget(QWidget):
     
     def __init__(self):
         super().__init__()
         self.viewer = napari.current_viewer()
-        self.mam = MicrogliaAnalyzer()
+        self.mam = MicrogliaAnalyzer(lambda x: print(x))
         self.font = None
         self.init_ui()
 
         self.sources_folder = None
+        self.active_worker = False
 
     # -------- UI: ----------------------------------
 
@@ -117,35 +118,37 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.segment_microglia_group = QGroupBox("Segmentation")
         layout = QVBoxLayout()
 
+        # Segmentation button
+        self.segment_microglia_button = QPushButton("🔍 Segment")
+        self.segment_microglia_button.setFont(self.font)
+        self.segment_microglia_button.clicked.connect(self.segment_microglia)
+        layout.addWidget(self.segment_microglia_button)
+
         # Minimal area of a microglia
         h_layout = QHBoxLayout()
         self.minimal_area_label = QLabel("Min area (µm²):")
         h_layout.addWidget(self.minimal_area_label)
         self.minimal_area_input = QSpinBox()
         self.minimal_area_input.setRange(0, 1000000)
+        self.minimal_area_input.setValue(110)
+        self.minimal_area_input.valueChanged.connect(self.min_area_update)
         h_layout.addWidget(self.minimal_area_input)
         layout.addLayout(h_layout)
 
         # Probality threshold slider
         h_layout = QHBoxLayout()
-        self.probability_threshold_label = QLabel("Min probability (%)")
+        self.probability_threshold_label = QLabel("Min probability:")
         h_layout.addWidget(self.probability_threshold_label)
         self.probability_threshold_slider = QSlider(Qt.Horizontal)
         self.probability_threshold_slider.setRange(0, 100)
-        self.probability_threshold_slider.setValue(50)
+        self.probability_threshold_slider.setValue(10)
         self.probability_threshold_slider.setTickInterval(1)
         self.probability_threshold_slider.setTickPosition(QSlider.TicksBelow)
         self.probability_threshold_slider.valueChanged.connect(self.proba_threshold_update)
         h_layout.addWidget(self.probability_threshold_slider)
-        self.proba_value_label = QLabel("50%")
+        self.proba_value_label = QLabel("10%")
         h_layout.addWidget(self.proba_value_label)
         layout.addLayout(h_layout)
-
-        # Segmentation button
-        self.segment_microglia_button = QPushButton("🔍 Segment")
-        self.segment_microglia_button.setFont(self.font)
-        self.segment_microglia_button.clicked.connect(self.segment_microglia)
-        layout.addWidget(self.segment_microglia_button)
 
         self.segment_microglia_group.setLayout(layout)
         self.layout.addWidget(self.segment_microglia_group)
@@ -154,16 +157,24 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.classify_microglia_group = QGroupBox("Classification")
         layout = QVBoxLayout()
 
-        # Dropdown menu to choose a model
-        self.model_selector = QComboBox()
-        self.model_selector.addItem("---")
-        layout.addWidget(self.model_selector)
-
         # Classification button
         self.classify_microglia_button = QPushButton("🧠 Classify")
         self.classify_microglia_button.setFont(self.font)
         self.classify_microglia_button.clicked.connect(self.classify_microglia)
         layout.addWidget(self.classify_microglia_button)
+
+        # Minimum score for classification
+        h_layout = QHBoxLayout()
+        self.minimal_score_label = QLabel("Min score:")
+        h_layout.addWidget(self.minimal_score_label)
+        self.minimal_score_slider = QSlider(Qt.Horizontal)
+        self.minimal_score_slider.setRange(0, 100)
+        self.minimal_score_slider.setValue(50)
+        h_layout.addWidget(self.minimal_score_slider)
+        self.min_score_label = QLabel("50%")
+        h_layout.addWidget(self.min_score_label)
+        self.minimal_score_slider.valueChanged.connect(self.min_score_update)
+        layout.addLayout(h_layout)
 
         self.classify_microglia_group.setLayout(layout)
         self.layout.addWidget(self.classify_microglia_group)
@@ -198,6 +209,9 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.clear_gui_elements()
         self.clear_attributes()
 
+    def min_score_update(self):
+        self.min_score_label.setText(f"{self.minimal_score_slider.value()}%")
+
     def select_sources_folder(self):
         folder_path = QFileDialog.getExistingDirectory(self, "Select sources folder")
         self.set_sources_folder(folder_path)
@@ -213,15 +227,53 @@ class MicrogliaAnalyzerWidget(QWidget):
 
     def proba_threshold_update(self):
         self.proba_value_label.setText(f"{self.probability_threshold_slider.value()}%")
-
-    def produce_patches(self):
-        pass
+        self.update_seg_pp()
+    
+    def min_area_update(self):
+        self.update_seg_pp()
 
     def segment_microglia(self):
-        pass
+        self.pbr = progress()
+        self.pbr.set_description("Segmenting microglia...")
+        self.set_active_ui(False)
+        self.thread = QThread()
+
+        self.mam.set_cc_min_size(self.minimal_area_input.value())
+        self.mam.set_proba_threshold(self.probability_threshold_slider.value() / 100)
+
+        self.worker = QtSegmentMicroglia(self.pbr, self.mam)
+        self.worker.update.connect(self.update_pbr)
+        self.active_worker = True
+
+        self.worker.moveToThread(self.thread)
+        self.worker.finished.connect(self.show_microglia)
+        self.thread.started.connect(self.worker.run)
+        
+        self.thread.start()
+
+    def update_seg_pp(self):
+        self.mam.set_cc_min_size(self.minimal_area_input.value())
+        self.mam.set_proba_threshold(self.probability_threshold_slider.value() / 100)
+        self.mam.segmentation_postprocessing()
+        self.show_microglia()
 
     def classify_microglia(self):
-        pass
+        self.pbr = progress()
+        self.pbr.set_description("Classifying microglia...")
+        self.set_active_ui(False)
+        self.thread = QThread()
+
+        self.mam.set_min_score(self.minimal_score_input.value() / 100)
+
+        self.worker = QtSegmentMicroglia(self.pbr, self.mam)
+        self.worker.update.connect(self.update_pbr)
+        self.active_worker = True
+
+        self.worker.moveToThread(self.thread)
+        self.worker.finished.connect(self.show_microglia)
+        self.thread.started.connect(self.worker.run)
+        
+        self.thread.start()
 
     def skeletonize_microglia(self):
         pass
@@ -233,6 +285,51 @@ class MicrogliaAnalyzerWidget(QWidget):
         pass
 
     # -------- Methods: ----------------------------------
+
+    def show_microglia(self):
+        self.end_worker()
+        labeled = self.mam.mask
+        show_info(f"Microglia segmented.")
+        if _SEGMENTATION_LAYER_NAME in self.viewer.layers:
+            layer = self.viewer.layers[_SEGMENTATION_LAYER_NAME]
+            layer.data = labeled
+        else:
+            layer = self.viewer.add_labels(labeled, name=_SEGMENTATION_LAYER_NAME)
+        if self.mam.calibration is not None:
+            self.set_calibration(*self.mam.calibration)
+        self.set_active_ui(True)
+
+    def set_active_ui(self, state):
+        self.clear_state_button.setEnabled(state)
+        self.select_sources_button.setEnabled(state)
+        self.images_combo.setEnabled(state)
+        self.calibration_input.setEnabled(state)
+        self.unit_selector.setEnabled(state)
+        self.calibrationButton.setEnabled(state)
+        self.segment_microglia_button.setEnabled(state)
+        self.minimal_area_input.setEnabled(state)
+        self.probability_threshold_slider.setEnabled(state)
+        self.classify_microglia_button.setEnabled(state)
+        self.skeletonize_microglia_button.setEnabled(state)
+        self.export_control_images_button.setEnabled(state)
+        self.export_measures_button.setEnabled(state)
+
+    def end_worker(self):
+        if self.active_worker:
+            self.active_worker = False
+            self.pbr.close()
+            self.thread.quit()
+            self.thread.wait()
+            self.thread.deleteLater()
+            self.set_active_ui(True)
+            self.total = -1
+
+    def update_pbr(self, text, current, total):
+        self.pbr.set_description(text)
+        if (total != self.total):
+            self.pbr.reset(total=total)
+            self.total = total
+        self.pbr.update(current)
 
     def clear_attributes(self):
         self.sources_folder = None
@@ -273,13 +370,16 @@ class MicrogliaAnalyzerWidget(QWidget):
     
     def open_image(self, image_path):
         data = tifffile.imread(image_path)
+        layer = None
         if _IMAGE_LAYER_NAME in self.viewer.layers:
-            self.viewer.layers[_IMAGE_LAYER_NAME].data = data
+            layer = self.viewer.layers[_IMAGE_LAYER_NAME]
+            layer.data = data
         else:
-            self.viewer.add_image(data, name=_IMAGE_LAYER_NAME, colormap='green')
-        self.mam.set_input_image(data)
+            layer = self.viewer.add_image(data, name=_IMAGE_LAYER_NAME, colormap='gray')
+        self.mam.set_input_image(data.copy())
+        if self.mam.calibration is not None:
+            self.set_calibration(*self.mam.calibration)
         
-    
     def convert_to_optimal_unit(self, size, unit):
         unit_factors = {
             'nm': 1e9,
@@ -303,11 +403,11 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.set_calibration(pixelSize, unit)
     
     def set_calibration(self, size, unit):
-        self.calibration_input.setText(f"{size:.2f}")
+        self.calibration_input.setText(f"{size:.3f}")
         self.unit_selector.setCurrentText(unit)
         self.viewer.scale_bar.unit = unit
         for layer in self.viewer.layers:
             layer.scale = (size, size)
-        self.pixel_size_label.setText(f"Pixel size: {size:.2f} {unit}")
+        self.pixel_size_label.setText(f"Pixel size: {size:.3f} {unit}")
         self.viewer.scale_bar.visible = True
         self.mam.set_calibration(size, unit)

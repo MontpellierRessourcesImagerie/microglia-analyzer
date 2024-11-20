@@ -8,14 +8,15 @@ import numpy as np
 from skimage.measure import label, regionprops
 from skimage import morphology
 
-from microglia_analyzer.tiles.tiler import ImageTiler2D, normalize
-from microglia_analyzer.dl.losses import dice_skeleton_loss, bce_dice_loss
-from microglia_analyzer.utils import calculate_iou, normalize_batch, download_from_web
+from microglia_analyzer.tiles.tiler import normalize
+from microglia_analyzer.utils import calculate_iou, normalize_batch
+from microglia_analyzer.tiles.tiler import ImageTiler2D
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['TF_CPP_MIN_LOG_LEVEL']  = '3'
 
-import tensorflow as tf
 import torch
+import tensorflow as tf
+from microglia_analyzer.dl.losses import dice_skeleton_loss, bce_dice_loss
 
 class MicrogliaAnalyzer(object):
     
@@ -30,14 +31,10 @@ class MicrogliaAnalyzer(object):
         self.classification_model_path = None
         # Path of the model that we use to segment microglia.
         self.segmentation_model_path = None
-        # Classification model.
-        self.classification_model = None
         # Segmentation model.
         self.segmentation_model = None
-        # Importance of the skeleton in the loss function.
-        self.unet_skeleton_coef = 0.2
-        # Importance of the BCE in the BCE-dice loss function.
-        self.unet_bce_coef = 0.7
+        # Classification model.
+        self.classification_model = None
         # Global logging function.
         self.logging = logging_f
         # Object responsible for cutting images into tiles.
@@ -48,6 +45,10 @@ class MicrogliaAnalyzer(object):
         self.overlap = None
         # Probability threshold for the segmentation (%).
         self.segmentation_threshold = 0.5
+        # Importance of the skeleton in the loss function.
+        self.unet_skeleton_coef = 0.2
+        # Importance of the BCE in the BCE-dice loss function.
+        self.unet_bce_coef = 0.7
         # Score threshold for the classification (%).
         self.score_threshold = 0.5
         # Probability map of the segmentation.
@@ -64,6 +65,8 @@ class MicrogliaAnalyzer(object):
         self.classifications = None
         # Dictionary of the bindings between the segmentation and the classification.
         self.bindings = None
+        # Final mask of the segmentation.
+        self.mask = None
 
     def log(self, message):
         if self.logging:
@@ -80,7 +83,6 @@ class MicrogliaAnalyzer(object):
         self.image = image
         self.tile_size = tile_size
         self.overlap = overlap
-        self.tiles_manager = ImageTiler2D(self.tile_size, self.overlap, image.shape)
     
     def set_calibration(self, pixel_size, unit):
         """
@@ -91,7 +93,7 @@ class MicrogliaAnalyzer(object):
             raise ValueError("The pixel size must be a float.")
         ureg = pint.UnitRegistry()
         try:
-            unit = ureg(unit)
+            ureg(unit)
         except pint.UndefinedUnitError:
             raise ValueError("The unit is not recognized.")
         self.calibration = (pixel_size, unit)
@@ -121,7 +123,8 @@ class MicrogliaAnalyzer(object):
         history_path = os.path.join(path, "training_history.png")
         if not os.path.exists(history_path):
             raise ValueError("The training of this model is not complete.")
-        self.segmentation_model_path = path
+        self.segmentation_model_path = model_path
+        print("Segmentation model path set to: ", self.segmentation_model_path)
         self.segmentation_model = tf.keras.models.load_model(
             model_path,
             custom_objects={
@@ -158,12 +161,32 @@ class MicrogliaAnalyzer(object):
         )
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.classification_model.to(device)
-    
+
     def segmentation_inference(self):
-        tiles = np.array(self.tiles_manager.image_to_tiles(self.image))
+        shape = self.image.shape
+        tiles_manager = ImageTiler2D(self.tile_size, self.overlap, shape)
+        tiles = np.array(tiles_manager.image_to_tiles(self.image))
         predictions = np.squeeze(self.segmentation_model.predict(tiles, batch_size=8))
         normalize_batch(predictions)
-        self.probability_map = self.tiles_manager.tiles_to_image(predictions)
+        self.probability_map = tiles_manager.tiles_to_image(predictions)
+
+    def set_proba_threshold(self, threshold):
+        if not 0.0 <= threshold <= 1.0:
+            print("The probability threshold must be between 0 and 1.")
+            return
+        self.segmentation_threshold = threshold
+
+    def set_cc_min_size(self, min_size):
+        if min_size < 0:
+            print("The minimum size must be a positive integer.")
+            return
+        self.cc_min_size = min_size
+
+    def set_min_score(self, min_score):
+        if not 0.0 <= min_score <= 1.0:
+            print("The minimum score must be between 0 and 1.")
+            return
+        self.score_threshold = min_score
 
     def filter_cc_by_size(self, mask, connectivity=2):
         """
@@ -187,7 +210,7 @@ class MicrogliaAnalyzer(object):
         filtered_binary = np.isin(labeled_map, labels_to_keep).astype(np.uint8) * 255
         return filtered_binary
 
-    def segmentation_postprocess(self):
+    def segmentation_postprocessing(self):
         self.mask = (self.probability_map > self.segmentation_threshold).astype(np.uint8)
         self.mask = self.filter_cc_by_size(self.mask)
         selem = morphology.diamond(2)
@@ -270,7 +293,7 @@ if __name__ == "__main__":
     ma.set_segmentation_model("/home/benedetti/Documents/projects/2060-microglia/µnet/µnet-V208")
     ma.set_classification_model("/home/benedetti/Documents/projects/2060-microglia/µyolo/µyolo-V051")
     ma.segmentation_inference()
-    ma.segmentation_postprocess()
+    ma.segmentation_postprocessing()
     ma.classification_inference()
     ma.classification_postprocess()
     ma.bind_classifications()

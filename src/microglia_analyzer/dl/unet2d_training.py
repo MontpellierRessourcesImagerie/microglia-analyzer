@@ -864,6 +864,8 @@ def get_model_path():
     version_name = f"{model_name_prefix}-V{str(v).zfill(3)}"
     output_path = os.path.join(models_path, version_name)
     os.makedirs(output_path)
+    with open(os.path.join(output_path, "version.txt"), "w") as f:
+        f.write(version_name)
     return output_path
 
 def cosine_annealing(epoch, _):

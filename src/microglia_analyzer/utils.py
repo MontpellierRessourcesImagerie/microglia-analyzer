@@ -78,8 +78,7 @@ def draw_bounding_boxes(image, predictions, classes, thickness=2):
     
     return image_with_boxes
 
-def download_from_web(url, target_dir, name, timeout=100):
-    extract_to = os.path.join(target_dir, name)
+def download_from_web(url, extract_to, timeout=100):
     if os.path.isdir(extract_to):
         shutil.rmtree(extract_to)
     os.makedirs(extract_to, exist_ok=True)
@@ -106,20 +105,3 @@ def download_from_web(url, target_dir, name, timeout=100):
         except Exception as e:
             print(f"Unknown decompression error: {e}")
             raise
-
-def download_ressources():
-        models_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
-        urls_path   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models.json")
-        if not os.path.isfile(urls_path):
-            print("The 'models.json' file is missing.")
-            return
-        if not os.path.isdir(models_path):
-            os.makedirs(models_path)
-        ressources = json.load(open(urls_path, "r"))
-        download_from_web(ressources['µnet'] , models_path, "µnet")
-        download_from_web(ressources['µyolo'], models_path, "µyolo")
-
-
-if __name__ == "__main__":
-    # download_ressources()
-    pass
