@@ -2,7 +2,10 @@ from qtpy.QtCore import QObject
 from PyQt5.QtCore import pyqtSignal
 import requests
 import os
+import numpy as np
 from microglia_analyzer.utils import download_from_web
+from microglia_analyzer.ma_worker import MicrogliaAnalyzer
+import tifffile
 
 _MODELS = "https://raw.githubusercontent.com/MontpellierRessourcesImagerie/microglia-analyzer/refs/heads/main/src/microglia_analyzer/models.json"
 
@@ -30,7 +33,7 @@ class QtSegmentMicroglia(QObject):
         local_version = 0
         with open(v_path, 'r') as f:
             local_version = int(f.read().strip())
-        if local_version < self.versions['µnet']['version']:
+        if local_version < int(self.versions['µnet']['version']):
             download_from_web(self.versions['µnet']['url'], self.model_path)
             print("Model updated.")
             return
@@ -76,7 +79,7 @@ class QtClassifyMicroglia(QObject):
         local_version = 0
         with open(v_path, 'r') as f:
             local_version = int(f.read().strip())
-        if local_version < self.versions['µyolo']['version']:
+        if local_version < int(self.versions['µyolo']['version']):
             download_from_web(self.versions['µyolo']['url'], self.model_path)
             print("Model updated.")
             return
@@ -95,4 +98,69 @@ class QtClassifyMicroglia(QObject):
         self.mga.set_classification_model(self.model_path)
         self.mga.classification_inference()
         self.mga.classification_postprocessing()
+        self.mga.bind_classifications()
+        self.finished.emit()
+
+class QtMeasureMicroglia(QObject):
+    
+    finished = pyqtSignal()
+    update   = pyqtSignal(str, int, int)
+
+    def __init__(self, pbr, mga):
+        super().__init__()
+        self.pbr = pbr
+        self.mga = mga
+
+    def run(self):
+        self.mga.analyze_as_graph()
+        self.finished.emit()
+
+class QtBatchRunners(QObject):
+    
+    finished = pyqtSignal()
+    update   = pyqtSignal(str, int, int)
+
+    def __init__(self, pbr, source_dir, settings):
+        super().__init__()
+        self.pbr = pbr
+        self.source_dir = source_dir
+        self.settings = settings
+        self.images_pool = [f for f in os.listdir(source_dir) if f.endswith(".tif")]
+        self.csv_lines = []
+
+    def workflow(self, index):
+        img_path = os.path.join(self.source_dir, self.images_pool[index])
+        img_data = tifffile.imread(img_path)
+        s = self.settings
+        ma = MicrogliaAnalyzer(lambda x: print(x))
+        ma.set_input_image(img_data)
+        ma.set_calibration(*s['calibration'])
+        ma.set_segmentation_model(s['unet_path'])
+        ma.set_classification_model(s['yolo_path'])
+        ma.set_cc_min_size(s['cc_min_size'])
+        ma.set_proba_threshold(s['proba_threshold'])
+        ma.segmentation_inference()
+        ma.segmentation_postprocessing()
+        ma.set_min_score(s['min_score'])
+        ma.classification_inference()
+        ma.classification_postprocessing()
+        ma.bind_classifications()
+        ma.analyze_as_graph()
+        csv = ma.as_csv(self.images_pool[index])
+        if index == 0:
+            self.csv_lines += csv
+        else:
+            self.csv_lines += csv[1:]
+        control_path = os.path.join(self.source_dir, "controls", self.images_pool[index])
+        tifffile.imwrite(control_path, np.stack([ma.skeleton, ma.mask], axis=0))
+    
+    def write_csv(self):
+        with open(os.path.join(self.source_dir, "controls", "results.csv"), 'w') as f:
+            f.write("\n".join(self.csv_lines))
+
+    def run(self):
+        for i in range(len(self.images_pool)):
+            self.workflow(i)
+            self.write_csv()
+            self.update.emit(self.images_pool[i], i+1, len(self.images_pool))
         self.finished.emit()

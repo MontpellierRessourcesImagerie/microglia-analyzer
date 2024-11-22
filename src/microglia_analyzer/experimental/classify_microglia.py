@@ -29,7 +29,7 @@ def calculate_iou(box1, box2):
     return 0.0 if union_area == 0 else (inter_area / union_area)
 
 class MicrogliaClassifier(object):
-    def __init__(self, model_path, image_path, iou_tr=0.8, score_tr=0.5, reload_yolo=False):
+    def __init__(self, model_path, image_path, iou_tr=0.25, score_tr=0.3, reload_yolo=False):
         if not os.path.isfile(model_path):
             raise FileNotFoundError(f"Model file {model_path} not found")
         if not model_path.endswith(".pt"):
@@ -85,16 +85,24 @@ class MicrogliaClassifier(object):
         return clean_boxes
 
     def inference(self):
-        results = self.model(self.image)
-        for img_results in results.xyxy:
+        tiles_manager = ImageTiler2D(640, 220, self.image.shape)
+        tiles = tiles_manager.image_to_tiles(self.image, False) # , True, 0, 255, np.uint8
+        results = self.model(tiles)
+        self.bboxes = {
+            'boxes'  : [],
+            'scores' : [],
+            'classes': [],
+        }
+        for i, img_results in enumerate(results.xyxy):
+            print(i)
+            y, x = tiles_manager.layout[i].ul_corner
             boxes   = img_results[:, :4].tolist()
+            boxes   = [[box[0] + x, box[1] + y, box[2] + x, box[3] + y] for box in boxes]
             scores  = img_results[:, 4].tolist()
             classes = img_results[:, 5].tolist()
-            self.bboxes = {
-                'boxes'  : boxes,
-                'scores' : scores,
-                'classes': classes,
-            }
+            self.bboxes['boxes'] += boxes
+            self.bboxes['scores'] += scores
+            self.bboxes['classes'] += classes
     
     def get_cleaned_bboxes(self):
         return self.remove_useless_boxes(self.bboxes)
@@ -119,7 +127,7 @@ def draw_bounding_boxes(image, predictions, classes, exclude_class=1, thickness=
     box_colors=[(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255),
         (255, 255, 255), (0, 0, 0), (128, 128, 128), (128, 0, 0), (0, 128, 0), (0, 0, 128), (128, 128, 0),
         (128, 0, 128), (0, 128, 128), (128, 128, 128)]
-    image_with_boxes = image.copy()
+    image_with_boxes = normalize(image, 0, 255, np.uint8)
     image_with_boxes = cv2.cvtColor(image_with_boxes, cv2.COLOR_GRAY2BGR)
     
     for box, cls, score in zip(predictions['boxes'], predictions['classes'], predictions['scores']):
@@ -136,9 +144,11 @@ def draw_bounding_boxes(image, predictions, classes, exclude_class=1, thickness=
 if __name__ == "__main__":
     mc = MicrogliaClassifier(
         "/home/benedetti/Documents/projects/2060-microglia/µyolo/µyolo-V051/weights/best.pt",
-        "/home/benedetti/Documents/projects/2060-microglia/data/raw-data/tiff-data/adulte 3.tif"
+        "/home/benedetti/Documents/projects/2060-microglia/data/raw-data/tiff-data/adulte 4.tif"
     )
     mc.inference()
+    print(len(mc.bboxes['boxes']))
     cleaned_bboxes = mc.get_cleaned_bboxes()
+    print(len(cleaned_bboxes['boxes']))
     visual = draw_bounding_boxes(mc.image, mc.get_cleaned_bboxes(), mc.classes)
     cv2.imwrite("/tmp/visual.png", visual)

@@ -7,6 +7,8 @@ import tifffile
 import numpy as np
 from skimage.measure import label, regionprops
 from skimage import morphology
+from skimage.morphology import skeletonize
+from skan import Skeleton, summarize
 
 from microglia_analyzer.tiles.tiler import normalize
 from microglia_analyzer.utils import calculate_iou, normalize_batch
@@ -40,9 +42,13 @@ class MicrogliaAnalyzer(object):
         # Object responsible for cutting images into tiles.
         self.tiles_manager = None
         # Size of the tiles (in pixels).
-        self.tile_size = None
-        # Overlap between the tiles (in pixels).
-        self.overlap = None
+        self.unet_tile_size = None
+        # Size of the tiles (in pixels).
+        self.yolo_tile_size = None
+        # Overlap for YOLO
+        self.yolo_overlap = None
+        # unet_overlap between the tiles (in pixels).
+        self.unet_overlap = None
         # Probability threshold for the segmentation (%).
         self.segmentation_threshold = 0.5
         # Importance of the skeleton in the loss function.
@@ -50,7 +56,7 @@ class MicrogliaAnalyzer(object):
         # Importance of the BCE in the BCE-dice loss function.
         self.unet_bce_coef = 0.7
         # Score threshold for the classification (%).
-        self.score_threshold = 0.5
+        self.score_threshold = 0.35
         # Probability map of the segmentation.
         self.probability_map = None
         # Connected component minimum size threshold.
@@ -60,19 +66,23 @@ class MicrogliaAnalyzer(object):
         # Set of bounding-boxes guessed by the classification model.
         self.bboxes = None
         # Maximum IoU threshold (%) for the classification. Beyond that, BBs are merged.
-        self.iou_threshold = 0.85
+        self.iou_threshold = 0.25
         # Bounding-boxes after they were cleaned.
         self.classifications = None
         # Dictionary of the bindings between the segmentation and the classification.
         self.bindings = None
         # Final mask of the segmentation.
         self.mask = None
+        # Graph metrics extracted from each label
+        self.graph_metrics = None
+        # Skeleton of the segmentation.
+        self.skeleton = None
 
     def log(self, message):
         if self.logging:
             self.logging(message)
 
-    def set_input_image(self, image, tile_size=512, overlap=128):
+    def set_input_image(self, image, unet_tile_size=512, unet_overlap=128, yolo_tile_size=640, yolo_overlap=128):
         """
         Setter of the input image.
         Checks that the image is 2D before using it.
@@ -81,8 +91,10 @@ class MicrogliaAnalyzer(object):
         if len(image.shape) != 2:
             raise ValueError("The input image must be 2D.")
         self.image = image
-        self.tile_size = tile_size
-        self.overlap = overlap
+        self.unet_tile_size = unet_tile_size
+        self.unet_overlap = unet_overlap
+        self.yolo_tile_size = yolo_tile_size
+        self.yolo_overlap = yolo_overlap
     
     def set_calibration(self, pixel_size, unit):
         """
@@ -161,11 +173,13 @@ class MicrogliaAnalyzer(object):
         )
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.classification_model.to(device)
+        self.classes = self.classification_model.names
 
     def segmentation_inference(self):
         shape = self.image.shape
-        tiles_manager = ImageTiler2D(self.tile_size, self.overlap, shape)
-        tiles = np.array(tiles_manager.image_to_tiles(self.image))
+        tiles_manager = ImageTiler2D(self.unet_tile_size, self.unet_overlap, shape)
+        input_unet = normalize(self.image, 0, 1, np.float32)
+        tiles = np.array(tiles_manager.image_to_tiles(input_unet, False))
         predictions = np.squeeze(self.segmentation_model.predict(tiles, batch_size=8))
         normalize_batch(predictions)
         self.probability_map = tiles_manager.tiles_to_image(predictions)
@@ -219,19 +233,22 @@ class MicrogliaAnalyzer(object):
         self.mask = label(self.mask, connectivity=2)
         
     def classification_inference(self):
-        yolo_input = normalize(self.image, 0, 255, np.uint8)
-        results = self.classification_model(yolo_input)
-        for img_results in results.xyxy:
+        yolo_input = self.image.copy() # normalize(self.image, 0, 255, np.uint8)
+        tiles_manager = ImageTiler2D(self.yolo_tile_size, self.yolo_overlap, self.image.shape)
+        tiles = tiles_manager.image_to_tiles(yolo_input, True, 0, 255, np.uint8)
+        results = self.classification_model(tiles)
+        self.bboxes = {'boxes': [], 'scores': [], 'classes': []}
+        for i, img_results in enumerate(results.xyxy):
             boxes   = img_results[:, :4].tolist()
+            y, x = tiles_manager.layout[i].ul_corner
+            boxes   = [[box[0] + x, box[1] + y, box[2] + x, box[3] + y] for box in boxes]
             scores  = img_results[:, 4].tolist()
             classes = img_results[:, 5].tolist()
-            self.bboxes = {
-                'boxes'  : boxes,
-                'scores' : scores,
-                'classes': classes,
-            }
+            self.bboxes['boxes'] += boxes
+            self.bboxes['scores'] += scores
+            self.bboxes['classes'] += classes
     
-    def classification_postprocess(self):
+    def classification_postprocessing(self):
         """
         Fusions boxes with an IoU greater than `iou_threshold`.
         The box with the highest score is kept, whatever the two classes were.
@@ -276,12 +293,80 @@ class MicrogliaAnalyzer(object):
         bindings = {int(l): (None, 0.0, None) for l in np.unique(labeled) if l != 0} # label: (class, IoU)
         for region in regions:
             seg_bbox = list(map(int, region.bbox))
+            bindings[region.label] = (0, 0.0, seg_bbox)
             for box, cls in zip(self.classifications['boxes'], self.classifications['classes']):
-                detect_bbox = list(map(int, box))
+                x1, y1, x2, y2 = list(map(int, box))
+                detect_bbox = [y1, x1, y2, x2]
                 iou = calculate_iou(seg_bbox, detect_bbox)
-                if iou > bindings[region.label][1]:
+                if iou > 0.8 and iou > bindings[region.label][1]:
                     bindings[region.label] = (cls, iou, seg_bbox)
         self.bindings = bindings
+    
+    def analyze_skeleton(self, mask):
+        skeleton = skeletonize(mask)
+        skel = Skeleton(skeleton)
+        branch_data = summarize(skel, separator='_')
+        factor = self.calibration[0] if self.calibration else 1.0
+
+        num_branches      = len(branch_data)
+        num_leaves        = np.sum(branch_data['branch_type'] == 1)
+        num_junctions     = np.sum(branch_data['branch_type'] == 2)
+        avg_branch_length = np.mean(branch_data['branch_distance']) * factor
+        total_length      = branch_data['branch_distance'].sum()    * factor
+        max_branch_length = branch_data['branch_distance'].max()    * factor
+
+        results = {
+            "number_of_branches"   : num_branches,
+            "number_of_leaves"     : num_leaves,
+            "number_of_junctions"  : num_junctions,
+            "average_branch_length": round(avg_branch_length, 2),
+            "total_length"         : round(total_length, 2),
+            "max_branch_length"    : round(max_branch_length, 2)
+        }
+
+        return results, skeleton
+
+    def analyze_as_graph(self):
+        labels    = np.unique(self.mask)
+        results   = {}
+        skeletons = np.zeros_like(self.mask)
+        for label in labels:
+            if label == 0:
+                continue
+            mask = (self.mask == label).astype(np.uint8)
+            results[label], skeleton = self.analyze_skeleton(mask)
+            skeletons = np.maximum(skeletons, skeleton)
+        self.graph_metrics = results
+        self.skeleton = skeletons
+    
+    def as_csv(self, identifier):
+        """
+        Merge two dictionaries into a CSV file.
+        - dict1: A dictionary containing nested dictionaries with graph measures.
+        - dict2: A dictionary containing tuples where only the first two elements (IoU and Class) are relevant.
+        - output_file: The name of the output CSV file.
+        """
+        common_labels = set(self.graph_metrics.keys()) & set(self.bindings.keys())
+        if len(common_labels) == 0:
+            return None
+        
+        first_label = next(iter(common_labels))
+        graph_measure_keys = list(self.graph_metrics[first_label].keys())
+        headers = ["Identifier"] + graph_measure_keys + ["IoU", "Class"]
+        buffer = [", ".join(headers)]
+
+        for i, label in enumerate(common_labels):
+            values = [""]
+            if i == 0:
+                values[0] = identifier
+            graph_measures = self.graph_metrics[label]
+            iou, class_value = self.bindings[label][:2]
+            class_value = self.classes[int(class_value)] if class_value is not None else ""
+            values += [graph_measures[key] for key in graph_measure_keys] + [iou, class_value]
+            line = ", ".join([str(v) for v in values])
+            buffer.append(line)
+
+        return buffer
 
 
 if __name__ == "__main__":
@@ -295,5 +380,9 @@ if __name__ == "__main__":
     ma.segmentation_inference()
     ma.segmentation_postprocessing()
     ma.classification_inference()
-    ma.classification_postprocess()
+    ma.classification_postprocessing()
     ma.bind_classifications()
+    ma.analyze_as_graph()
+    csv = ma.as_csv("adulte 3")
+    with open("/tmp/metrics.csv", "w") as f:
+        f.write("\n".join(csv))

@@ -83,5 +83,4 @@ venv/
 # written by setuptools_scm
 **/_version.py
 
-models∕
-models/*
+src/microglia_analyzer/models/

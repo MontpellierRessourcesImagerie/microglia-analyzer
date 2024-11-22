@@ -3,27 +3,20 @@ import requests
 import zipfile
 import tempfile
 import os
-import json
+import numpy as np
 import shutil
 from microglia_analyzer.tiles.tiler import normalize
 
 BBOX_COLORS = [
-    (255,   0,   0), 
-    (  0, 255,   0), 
-    (  0,   0, 255), 
-    (255, 255,   0), 
-    (255,   0, 255), 
-    (  0, 255, 255),
-    (255, 255, 255), 
-    (  0,   0,   0), 
-    (128, 128, 128), 
-    (128,   0,   0), 
-    (  0, 128,   0), 
-    (  0,   0, 128), 
-    (128, 128,   0),
-    (128,   0, 128), 
-    (  0, 128, 128), 
-    (128, 128, 128)
+    '#FF000000',  # Red
+    '#0000FF',  # Blue
+    '#FFFF00',  # Yellow
+    '#008000',  # Dark green
+    '#FFA500',  # Orange
+    '#00FFFF',  # Cyan
+    '#800080',  # Purple
+    '#FF1493',  # Vivid pink
+    '#ADFF2F',  # Lime
 ]
 
 def calculate_iou(box1, box2):
@@ -77,6 +70,23 @@ def draw_bounding_boxes(image, predictions, classes, thickness=2):
         cv2.putText(image_with_boxes, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, BBOX_COLORS[int(cls)], 1)
     
     return image_with_boxes
+
+def boxes_as_napari_shapes(collection, swap=False):
+    items = []
+    colors = []
+    for (cls, _, seg_bbox) in collection:
+        y1, x1, y2, x2 = map(int, seg_bbox)
+        if swap:
+            x1, y1, x2, y2 = map(int, seg_bbox)
+        rect = np.array([
+            [y1, x1],  # Haut-gauche
+            [y1, x2],  # Haut-droite
+            [y2, x2],  # Bas-droite
+            [y2, x1],  # Bas-gauche
+        ])
+        colors.append(BBOX_COLORS[int(cls)])
+        items.append(rect)
+    return items, colors
 
 def download_from_web(url, extract_to, timeout=100):
     if os.path.isdir(extract_to):

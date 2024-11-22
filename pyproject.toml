@@ -30,7 +30,10 @@ dependencies = [
     "scikit-image",
     "opencv-python-headless",
     "pint",
-    "tifffile"
+    "tifffile",
+    "torch",
+    "tensorflow==2.16.1",
+    "skan"
 ]
 
 # Required for documentation: tabs, sphinx_sphinx, myst_parser, sphinx_rtd_theme
@@ -38,9 +41,9 @@ dependencies = [
 [project.optional-dependencies]
 testing = [
     "tox",
-    "pytest",  # https://docs.pytest.org/en/latest/contents.html
-    "pytest-cov",  # https://pytest-cov.readthedocs.io/en/latest/
-    "pytest-qt",  # https://pytest-qt.readthedocs.io/en/latest/
+    "pytest",
+    "pytest-cov",
+    "pytest-qt",
     "napari",
     "pyqt5",
     "numpy",
@@ -48,7 +51,10 @@ testing = [
     "scikit-image",
     "opencv-python-headless",
     "pint",
-    "tifffile"
+    "tifffile",
+    "torch",
+    "tensorflow==2.16.1",
+    "skan"
 ]
 
 [project.entry-points."napari.manifest"]
