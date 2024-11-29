@@ -53,8 +53,8 @@ class MicrogliaSegmenter(object):
         return probabilities
 
 if __name__ == "__main__":
-    output_path = "/tmp/inference/"
-    model_path  = "/home/benedetti/Documents/projects/2060-microglia/µnet/µnet-V208/best.keras"
+    output_path = "/home/benedetti/Downloads/training-audrey/output/"
+    model_path  = "/home/benedetti/Downloads/training-audrey/models/unet-V007/best.keras"
     folder_path = "/home/benedetti/Documents/projects/2060-microglia/data/raw-data/tiff-data"
     content     = [f for f in os.listdir(folder_path) if f.endswith(".tif")]
     for i, image_name in enumerate(content):

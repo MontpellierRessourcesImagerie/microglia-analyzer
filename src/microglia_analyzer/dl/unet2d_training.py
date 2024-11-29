@@ -12,28 +12,30 @@ from skimage.morphology import binary_dilation, diamond, skeletonize
 import pandas as pd
 from tabulate import tabulate
 
-from microglia_analyzer.dl.losses import (dice_loss, bce_dice_loss, 
-                                          skeleton_recall, dice_skeleton_loss)
+# from microglia_analyzer.dl.losses import (dice_loss, bce_dice_loss, 
+#                                           skeleton_recall, dice_skeleton_loss)
+from losses import (dice_loss, bce_dice_loss, skeleton_recall, dice_skeleton_loss)
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import (ModelCheckpoint, EarlyStopping, 
                                         ReduceLROnPlateau, Callback)
-from tensorflow.keras.layers import (Input, Conv2D, MaxPooling2D, Dropout, BatchNormalization,
-                                     UpSampling2D, concatenate, Activation, Conv2DTranspose)
+from tensorflow.keras.layers import (Input, Conv2D, MaxPooling2D, 
+                                     Dropout, BatchNormalization,
+                                     UpSampling2D, concatenate, Add,
+                                     Conv2DTranspose, Activation, Multiply)
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import plot_model
-from tensorflow.keras.losses import BinaryCrossentropy
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                              SETTINGS                                           #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-#@markdown # ⭐ 1. SETTINGS
+# ⭐ 1. SETTINGS
 
 """
 
@@ -45,6 +47,8 @@ from tensorflow.keras.losses import BinaryCrossentropy
 - `working_directory`: Folder in which the training, validation and testing folders will be created.
 - `model_name_prefix`: Prefix of the model name. Will be part of the folder name in `models_path`.
 - `reset_local_data` : If True, the locally copied training, validation and testing folders will be re-imported.
+- `remove_wrong_data`: If True, the data that is not useful will be deleted from the data folder.
+- `data_usage`       : Path to a JSON file containing how each input file should be used (for training, validation or testing).
 
 - `validation_percentage`: Percentage of the data that will be used for validation. This data will be moved to the validation folder.
 - `batch_size`           : Number of images per batch.
@@ -54,30 +58,39 @@ from tensorflow.keras.losses import BinaryCrossentropy
 - `dropout_rate`         : Dropout rate.
 - `optimizer`            : Optimizer used for the training.
 - `learning_rate`        : Learning rate at which the optimizer is initialized
+- `skeleton_coef`        : Coefficient of the skeleton loss.
+- `bce_coef`             : Coefficient of the binary cross-entropy loss.
+- `early_stop_patience`  : Number of epochs without improvement before stopping the training.
+- `dilation_kernel`      : Kernel used for the dilation of the skeleton.
+- `loss`                 : Loss function used for the training.
 
 - `use_data_augmentation`: If True, data augmentation will be used.
 - `use_mirroring`        : If True, random mirroring will be used.
 - `use_gaussian_noise`   : If True, random gaussian noise will be used.
-- `use_random_rotations` : If True, random rotation of 90, 180 or 270 degrees will be used.
+- `noise_scale`          : Scale of the gaussian noise (range of values).
+- `use_random_rotations` : If True, random rotations will be used.
+- `angle_range`          : Range of the random rotations. The angle will be in [angle_range[0], angle_range[1]].
 - `use_gamma_correction` : If True, random gamma correction will be used.
 - `gamma_range`          : Range of the gamma correction. The gamma will be in [1 - gamma_range, 1 + gamma_range] (1.0 == neutral).
+- `use_holes`            : If True, holes will be created in the input images to teach the network to gap them.
+- `export_aug_sample`    : If True, an augmented sample will be exported to the working directory as a preview.
 
 """
 
-#@markdown ## 📍 a. Data paths
+## 📍 a. Data paths
 
-data_folder       = "/home/benedetti/Documents/projects/2060-microglia/data/training-data/clean"
+data_folder       = "/home/benedetti/Downloads/training-audrey"
 qc_folder         = None
 inputs_name       = "inputs"
 masks_name        = "masks"
-models_path       = "/home/benedetti/Documents/projects/2060-microglia/µnet"
+models_path       = "/home/benedetti/Downloads/training-audrey/models"
 working_directory = "/tmp/unet_working/"
-model_name_prefix = "µnet"
+model_name_prefix = "unet"
 reset_local_data  = True
-remove_wrong_data = False
+remove_wrong_data = True
 data_usage        = None
 
-#@markdown ## 📍 b. Network architecture
+## 📍 b. Network architecture
 
 validation_percentage = 0.15
 batch_size            = 8
@@ -88,16 +101,16 @@ dropout_rate          = 0.2
 optimizer             = 'Adam'
 learning_rate         = 0.001
 skeleton_coef         = 0.2
-bce_coef              = 0.7
+bce_coef              = 0.25
 early_stop_patience   = 50
 dilation_kernel       = diamond(1)
 loss                  = dice_skeleton_loss(skeleton_coef, bce_coef)
 
-#@markdown ## 📍 c. Data augmentation
+## 📍 c. Data augmentation
 
 use_data_augmentation = True
 use_mirroring         = True
-use_gaussian_noise    = True
+use_gaussian_noise    = False
 noise_scale           = 0.001
 use_random_rotations  = True
 angle_range           = (-90, 90)
@@ -110,7 +123,7 @@ export_aug_sample     = True
 #                            SANITY CHECK                                         #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-#@markdown # ⭐ 2. SANITY CHECK
+# ⭐ 2. SANITY CHECK
 
 """
 The goal of this section is to make sure that the data located in the `data_folder` is consistent.
@@ -123,7 +136,7 @@ The following checks will be performed:
         | Masks must be binary masks (on 8-bits with only 0 and another value).
 """
 
-#@markdown ## 📍 a. Data check
+## 📍 a. Data check
 
 # Regex matching a TIFF file, whatever the case and the number of 'f'.
 _TIFF_REGEX = r".+\.tiff?"
@@ -276,7 +289,7 @@ def merge_dicts(d1, d2):
             d1[key] = value
 
 
-#@markdown ## 📍 b. Sanity check launcher
+## 📍 b. Sanity check launcher
 
 _SANITY_CHECK = [
     ("extension", is_extension_correct),
@@ -321,7 +334,7 @@ def sanity_check(root_folder):
     return (all(assessment), results)
 
 
-#@markdown ## 📍 c. Remove dirty data
+## 📍 c. Remove dirty data
 
 def remove_dirty_data(root_folder, folders, results):
     """
@@ -344,9 +357,9 @@ def remove_dirty_data(root_folder, folders, results):
 #                            DATA MIGRATION                                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-#@markdown # ⭐ 3. DATA MIGRATION
+# ⭐ 3. DATA MIGRATION
 
-#@markdown ## 📍 a. Utils
+## 📍 a. Utils
 
 _LOCAL_FOLDERS = ["training", "validation", "testing"]
 
@@ -440,9 +453,9 @@ def migrate_data(targets, source):
 #                            DATA AUGMENTATION                                    #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-#@markdown # ⭐ 4. DATA AUGMENTATION
+# ⭐ 4. DATA AUGMENTATION
 
-#@markdown ## 📍 a. Data augmentation functions
+## 📍 a. Data augmentation functions
 
 def deteriorate_image(image, mask, num_points=25):
     """
@@ -581,7 +594,7 @@ def apply_data_augmentation(image, mask):
     image, mask = normalize(image, mask)
     return image, mask
 
-#@markdown ## 📍 b. Datasets visualization
+## 📍 b. Datasets visualization
 
 def visualize_augmentations(model_path, num_examples=6):
     """
@@ -620,9 +633,9 @@ def visualize_augmentations(model_path, num_examples=6):
 #                            DATASET GENERATOR                                    #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-#@markdown # ⭐ 5. DATASET GENERATOR
+# ⭐ 5. DATASET GENERATOR
 
-#@markdown ## 📍 a. Datasets generator
+## 📍 a. Datasets generator
 
 def open_pair(input_path, mask_path, training, img_only):
     raw_img = tifffile.imread(input_path)
@@ -719,9 +732,9 @@ def export_data_usage(model_path):
 #                            MODEL GENERATOR                                      #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-#@markdown # ⭐ 6. MODEL GENERATOR
+# ⭐ 6. MODEL GENERATOR
 
-#@markdown ## 📍 a. Utils
+## 📍 a. Utils
 
 def get_version():
     """
@@ -740,7 +753,40 @@ def get_version():
     else:
         return int(content[-1].split('-')[-1].replace('V', '')) + 1
 
-#@markdown ## 📍 b. UNet2D architecture
+## 📍 b. Structure of an attention block
+
+def attention_block(x, g, intermediate_channels):
+    """
+    Attention Block pour UNet.
+    
+    Args:
+        x: TensorFlow tensor des caractéristiques de l'encodeur (skip connection).
+        g: TensorFlow tensor des caractéristiques du décodeur.
+        intermediate_channels: Nombre de canaux intermédiaires.
+
+    Returns:
+        Tensor avec attention appliquée sur `x`.
+    """
+    # Transformation de la caractéristique du décodeur
+    g1 = Conv2D(intermediate_channels, kernel_size=1, strides=1, padding="same")(g)
+    g1 = BatchNormalization()(g1)
+    
+    # Transformation de la caractéristique de l'encodeur
+    x1 = Conv2D(intermediate_channels, kernel_size=1, strides=1, padding="same")(x)
+    x1 = BatchNormalization()(x1)
+    
+    # Calcul de l'attention (g1 + x1 -> ReLU -> Sigmoid)
+    psi = Add()([g1, x1])
+    psi = Activation('relu')(psi)
+    psi = Conv2D(1, kernel_size=1, strides=1, padding="same")(psi)
+    psi = BatchNormalization()(psi)
+    psi = Activation('sigmoid')(psi)
+    
+    # Application de l'attention sur x
+    out = Multiply()([x, psi])
+    return out
+
+## 📍 c. UNet2D architecture
 
 def create_unet2d_model(input_shape):
     """
@@ -774,6 +820,7 @@ def create_unet2d_model(input_shape):
         num_filters = num_filters_start * 2**i
         x = UpSampling2D(2)(x)
         x = Conv2DTranspose(num_filters, (3, 3), strides=(1, 1), padding='same')(x)
+        x = attention_block(skip_connections[i], x, intermediate_channels=8)
         x = concatenate([x, skip_connections[i]])
         x = Conv2D(num_filters, 3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
         # x = BatchNormalization()(x)
@@ -785,7 +832,7 @@ def create_unet2d_model(input_shape):
     return model
 
 
-#@markdown ## 📍 c. Model instanciator
+## 📍 d. Model instanciator
 
 def instanciate_model():
     input_shape = get_shape()
@@ -806,9 +853,9 @@ def instanciate_model():
 #                            TRAINING THE MODEL                                   #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-#@markdown # ⭐ 7. TRAINING THE MODEL
+# ⭐ 7. TRAINING THE MODEL
 
-#@markdown ## 📍 a. Creating callback for validation
+## 📍 a. Creating callback for validation
 
 class SavePredictionsCallback(Callback):
     def __init__(self, model_path, num_examples=5):
@@ -855,7 +902,7 @@ class SavePredictionsCallback(Callback):
         shutil.move(last_epoch_path, last_epoch_dest)
             
 
-#@markdown ## 📍 b. Training launcher
+## 📍 b. Training launcher
 
 import math
 
@@ -934,7 +981,7 @@ def export_settings(model_path):
 #                            EVALUATE THE MODEL                                   #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-#@markdown # ⭐ 8. EVALUATE THE MODEL
+# ⭐ 8. EVALUATE THE MODEL
 
 def plot_training_history(history, model_path):
     """

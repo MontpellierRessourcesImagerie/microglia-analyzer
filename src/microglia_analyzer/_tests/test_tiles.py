@@ -20,17 +20,20 @@ from microglia_analyzer.tiles.recalibrate import recalibrate_shape, recalibrate_
 
 """
 
+# (patch_size, overlap, (height, width))
 _PATCHES_SETTINGS = [
-    (64, 0 , (64 , 64)),  # no overlap
-    (64, 0 , (64 , 128)), # no overlap
-    (64, 0 , (128, 64)),  # no overlap
-    (64, 0 , (128, 128)), # no overlap
-    (64, 32, (64 , 64)),  # overlap
-    (64, 32, (64 , 128)), # overlap
-    (64, 32, (128, 64)),  # overlap
-    (64, 32, (128, 128))  # overlap
+    ( 64,   0, (  64,   64)),
+    ( 64,   0, (  64,  128)),
+    ( 64,   0, ( 128,   64)),
+    ( 64,   0, ( 128,  128)),
+    ( 64,  32, (  64,   64)),
+    ( 64,  32, (  64,  128)),
+    ( 64,  32, ( 128,   64)),
+    ( 64,  32, ( 128,  128)),
+    (512, 128, (2048, 2048))
 ]
 
+# (Number of patches Y-axis, Number of patches X-axis)
 _GRID_GROUND_TRUTH = [
     (1, 1),
     (1, 2),
@@ -39,13 +42,17 @@ _GRID_GROUND_TRUTH = [
     (1, 1),
     (1, 3),
     (3, 1),
-    (3, 3)
+    (3, 3),
+    (5, 5)
 ]
 
+# Blending between patches (for tiles_to_image)
 _BLENDINGS = ['flat', 'gradient']
 
+# Number of channels for the image
 _N_CHANNELS = [1, 3, 5]
 
+# Normalization targets: (target data type, lower bound, upper bound)
 _NORMALIZE_BOUNDS = [
     (np.uint8  , 0  , 255),
     (np.uint16 , 0  , 65535),
@@ -54,6 +61,7 @@ _NORMALIZE_BOUNDS = [
     (np.float32, 0.2, 0.8)
 ]
 
+# Random images to be normalized
 _IMAGE_NORMALIZE = [
     np.random.randint(50, 200, (128, 128)).astype(np.uint8),
     np.random.randint(50, 200, (128, 128, 3)).astype(np.uint8),
@@ -88,7 +96,8 @@ _SHAPES_RECALIBRATE = [
 def test_normalize(dtype, lower_bound, upper_bound, image):
     """
     Tests that for each pixel, the sum of the blending coefficients is equal to 1.
-    To do so, we just check that cutting and remerging the image doesn't change it.
+    To do so, we just check that cutting and remerging an image doesn't change it.
+    Input images are randomly generated.
     """
     normalized_image = normalize(image, lower_bound, upper_bound, dtype)
     is_zero, is_unique_val, vals_match = False, False, False
@@ -124,7 +133,7 @@ def test_wrong_settings(patch_size, overlap, shape, errType):
 )
 def test_grid_size(patch_size, overlap, shape, target):
     """
-    Tests that the number of tiles on each axis is correct.
+    Tests that the number of tiles on each axis is what we expect.
     """
     pe = ImageTiler2D(patch_size, overlap, shape)
     assert pe.get_grid_size() == target
@@ -141,7 +150,7 @@ def test_n_tiles(patch_size, overlap, shape, target):
     """
     pe = ImageTiler2D(patch_size, overlap, shape)
     assert len(pe.get_layout()) == target[0] * target[1]
-    assert len(pe.get_blending_tiles()) == target[0] * target[1]
+    assert len(pe.blending_coefs) == target[0] * target[1]
 
 
 @pytest.mark.parametrize("patch_size, overlap, shape", _PATCHES_SETTINGS)
