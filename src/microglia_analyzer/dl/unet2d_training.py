@@ -96,12 +96,12 @@ validation_percentage = 0.15
 batch_size            = 8
 epochs                = 500
 unet_depth            = 2
-num_filters_start     = 24
-dropout_rate          = 0.2
+num_filters_start     = 32
+dropout_rate          = 0.25
 optimizer             = 'Adam'
 learning_rate         = 0.001
 skeleton_coef         = 0.2
-bce_coef              = 0.25
+bce_coef              = 0.5
 early_stop_patience   = 50
 dilation_kernel       = diamond(1)
 loss                  = dice_skeleton_loss(skeleton_coef, bce_coef)
@@ -658,7 +658,8 @@ def open_pair(input_path, mask_path, training, img_only):
 def pairs_generator(src, training, img_only):
     source = src.decode('utf-8')
     _, l_files = get_data_pools(os.path.join(working_directory, source), [inputs_name], True)
-    l_files = sorted(list(l_files))
+    l_files = list(l_files)
+    random.shuffle(l_files)
     i = 0
     while i < len(l_files):
         input_path = os.path.join(working_directory, source, inputs_name, l_files[i])
@@ -825,6 +826,8 @@ def create_unet2d_model(input_shape):
         x = Conv2D(num_filters, 3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
         # x = BatchNormalization()(x)
         x = Conv2D(num_filters, 3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
+        if i > 0:
+            x = BatchNormalization()(x)
         # x = BatchNormalization()(x)
 
     outputs = Conv2D(1, 1, activation='sigmoid')(x)
@@ -923,7 +926,7 @@ def cosine_annealing(epoch, _):
     return float(learning_rate * decayed)
 
 def train_model(model, train_dataset, val_dataset, output_path):
-    plot_model(model, to_file=os.path.join(output_path, 'architecture.png'), show_shapes=True)
+    #plot_model(model, to_file=os.path.join(output_path, 'architecture.png'), show_shapes=True)
     print(f"💾 Exporting model to: {output_path}")
 
     checkpoint = ModelCheckpoint(os.path.join(output_path, 'best.keras'), save_best_only=True, monitor='val_loss', mode='min')

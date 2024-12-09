@@ -2,6 +2,8 @@ import os
 import shutil
 import pint
 import json
+import pathlib
+import platform
 
 import tifffile
 import numpy as np
@@ -165,6 +167,9 @@ class MicrogliaAnalyzer(object):
         if not os.path.isfile(confusion_matrix_path):
             raise ValueError("The training of this model is not complete.")
         self.classification_model_path = weights_path
+        plt = platform.system()
+        if plt == "Windows":
+            pathlib.PosixPath = pathlib.WindowsPath
         self.classification_model = torch.hub.load(
             'ultralytics/yolov5', 
             'custom', 
@@ -287,7 +292,7 @@ class MicrogliaAnalyzer(object):
             used.add(i)
         self.classifications = clean_boxes
     
-    def bind_classifications(self):
+    def _bind_classifications(self):
         labeled = self.mask
         regions = regionprops(labeled)
         bindings = {int(l): (None, 0.0, None) for l in np.unique(labeled) if l != 0} # label: (class, IoU)
@@ -298,10 +303,35 @@ class MicrogliaAnalyzer(object):
                 x1, y1, x2, y2 = list(map(int, box))
                 detect_bbox = [y1, x1, y2, x2]
                 iou = calculate_iou(seg_bbox, detect_bbox)
-                if iou > 0.8 and iou > bindings[region.label][1]:
+                if iou > bindings[region.label][1]: # iou > 0.2 and
                     bindings[region.label] = (cls, iou, seg_bbox)
         self.bindings = bindings
     
+    def bind_classifications(self):
+        labeled = self.mask
+        regions = regionprops(labeled)
+        # box_index: (class, IoU, label, seg_bbox)
+        bindings = {b: (None, 0.0, None, None) for b in range(len(self.classifications['boxes']))}
+        
+        for b_index, (box, cls) in enumerate(zip(self.classifications['boxes'], self.classifications['classes'])):
+            x1, y1, x2, y2 = list(map(int, box))
+            detect_bbox = [y1, x1, y2, x2]
+            for region in regions:
+                seg_bbox = list(map(int, region.bbox))
+                iou = calculate_iou(seg_bbox, detect_bbox)
+                if iou > bindings[b_index][1]:
+                    bindings[b_index] = (cls, iou, region.label, seg_bbox)
+                
+        self.bindings = self.flip_dict(bindings)
+    
+    def flip_dict(self, d):
+        flipped = {}
+        for _, (cls, iou, label, seg_bbox) in d.items():
+            if seg_bbox is None:
+                continue
+            flipped[label] = (cls, iou, seg_bbox)
+        return flipped
+
     def analyze_skeleton(self, mask):
         skeleton = skeletonize(mask)
         skel = Skeleton(skeleton)
@@ -360,7 +390,7 @@ class MicrogliaAnalyzer(object):
             if i == 0:
                 values[0] = identifier
             graph_measures = self.graph_metrics[label]
-            iou, class_value = self.bindings[label][:2]
+            class_value, iou = self.bindings[label][:2]
             class_value = self.classes[int(class_value)] if class_value is not None else ""
             values += [graph_measures[key] for key in graph_measure_keys] + [iou, class_value]
             line = ", ".join([str(v) for v in values])

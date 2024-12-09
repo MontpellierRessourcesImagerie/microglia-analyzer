@@ -18,7 +18,7 @@ skeleton_coef = 0.2
 bce_coef      = 0.7
 
 class MicrogliaSegmenter(object):
-    def __init__(self, model_path, image_path, tile_size=512, overlap=128):
+    def __init__(self, model_path, image_path, tile_size=512, overlap=256):
         if not os.path.isfile(model_path):
             raise FileNotFoundError(f"Model file {model_path} not found")
         if not model_path.endswith(".keras"):
@@ -27,7 +27,7 @@ class MicrogliaSegmenter(object):
             model_path,
             custom_objects={
                 "bcl": bce_dice_loss(bce_coef),
-                "dsl": dice_skeleton_loss(skeleton_coef, bce_coef)
+                "_dice_skeleton_loss": dice_skeleton_loss(skeleton_coef, bce_coef)
             }
         )
         if not os.path.isfile(image_path):
@@ -48,14 +48,16 @@ class MicrogliaSegmenter(object):
         tiles = np.array(tiles_manager.image_to_tiles(self.image))
         predictions = np.squeeze(self.model.predict(tiles, batch_size=8))
         tifffile.imwrite("/tmp/tiles.tif", predictions)
-        normalize_batch(predictions)
+        tifffile.imwrite("/tmp/coefs.tif", tiles_manager.blending_coefs)
+        # normalize_batch(predictions)
         probabilities = tiles_manager.tiles_to_image(predictions)
         return probabilities
+
 
 if __name__ == "__main__":
     output_path = "/home/benedetti/Downloads/training-audrey/output/"
     model_path  = "/home/benedetti/Downloads/training-audrey/models/unet-V007/best.keras"
-    folder_path = "/home/benedetti/Documents/projects/2060-microglia/data/raw-data/tiff-data"
+    folder_path = "/home/benedetti/Downloads/training-audrey/raw/"
     content     = [f for f in os.listdir(folder_path) if f.endswith(".tif")]
     for i, image_name in enumerate(content):
         print(f"{i+1}/{len(content)}: {image_name}")

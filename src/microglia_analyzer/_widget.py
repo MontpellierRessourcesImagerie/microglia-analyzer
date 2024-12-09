@@ -6,7 +6,7 @@ from qtpy.QtWidgets import (QWidget, QVBoxLayout, QGroupBox, QTableWidget,
 from qtpy.QtCore import QThread, Qt
 
 from PyQt5.QtGui import QFont, QDoubleValidator, QColor
-from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtCore import pyqtSignal, Qt, QLocale
 
 import napari
 from napari.utils.notifications import show_info
@@ -91,6 +91,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         # Create QLineEdit for float input
         self.calibration_input = QLineEdit()
         float_validator = QDoubleValidator()
+        float_validator.setLocale(QLocale(QLocale.English))
         float_validator.setNotation(QDoubleValidator.StandardNotation)
         self.calibration_input.setValidator(float_validator)
         nav_layout.addWidget(self.calibration_input)
@@ -146,12 +147,12 @@ class MicrogliaAnalyzerWidget(QWidget):
         h_layout.addWidget(self.probability_threshold_label)
         self.probability_threshold_slider = QSlider(Qt.Horizontal)
         self.probability_threshold_slider.setRange(0, 100)
-        self.probability_threshold_slider.setValue(5)
+        self.probability_threshold_slider.setValue(40)
         self.probability_threshold_slider.setTickInterval(1)
         self.probability_threshold_slider.setTickPosition(QSlider.TicksBelow)
         self.probability_threshold_slider.valueChanged.connect(self.proba_threshold_update)
         h_layout.addWidget(self.probability_threshold_slider)
-        self.proba_value_label = QLabel("5%")
+        self.proba_value_label = QLabel("40%")
         h_layout.addWidget(self.proba_value_label)
         layout.addLayout(h_layout)
 
@@ -400,7 +401,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         tps = [(c, None, b) for c, b in zip(classification['classes'], classification['boxes'])]
         boxes, colors = boxes_as_napari_shapes(tps, True)
         if _YOLO_LAYER_NAME not in self.viewer.layers:
-            layer = self.viewer.add_shapes(boxes, name=_YOLO_LAYER_NAME, edge_color=colors, face_color='#00000000', edge_width=4)
+            layer = self.viewer.add_shapes(boxes, name=_YOLO_LAYER_NAME, edge_color=colors, face_color='#00000000', edge_width=4, visible=False)
         else:
             layer = self.viewer.layers[_YOLO_LAYER_NAME]
             layer.data = boxes
@@ -493,6 +494,16 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.images_combo.clear()
         self.images_combo.addItems(self.get_all_tiff_files(folder_path))
     
+    def reset_layers(self):
+        if _SEGMENTATION_LAYER_NAME in self.viewer.layers:
+            self.viewer.layers[_SEGMENTATION_LAYER_NAME].data = np.zeros_like(self.viewer.layers[_SEGMENTATION_LAYER_NAME].data)
+        if _CLASSIFICATION_LAYER_NAME in self.viewer.layers:
+            self.viewer.layers[_CLASSIFICATION_LAYER_NAME].data = []
+        if _YOLO_LAYER_NAME in self.viewer.layers:
+            self.viewer.layers[_YOLO_LAYER_NAME].data = []
+        if _SKELETON_LAYER_NAME in self.viewer.layers:
+            self.viewer.layers[_SKELETON_LAYER_NAME].data = np.zeros_like(self.viewer.layers[_SKELETON_LAYER_NAME].data)
+
     def open_image(self, image_path):
         data = tifffile.imread(image_path)
         layer = None
@@ -501,6 +512,7 @@ class MicrogliaAnalyzerWidget(QWidget):
             layer.data = data
         else:
             layer = self.viewer.add_image(data, name=_IMAGE_LAYER_NAME, colormap='gray')
+        self.reset_layers()
         self.mam.set_input_image(data.copy())
         if self.mam.calibration is not None:
             self.set_calibration(*self.mam.calibration)
