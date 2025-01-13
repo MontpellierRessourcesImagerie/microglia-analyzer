@@ -40,6 +40,7 @@ class MicrogliaAnalyzerWidget(QWidget):
 
         self.sources_folder = None
         self.active_worker = False
+        self.n_images = 0
 
     # -------- UI: ----------------------------------
 
@@ -228,8 +229,8 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.export_measures_button.clicked.connect(self.export_measures)
         layout.addWidget(self.export_measures_button)
 
-        self.run_batch_button = QPushButton("☑️ Run batch")
-        self.run_batch_button.setFont(self.font)
+        self.run_batch_button = QPushButton("▶ Run batch")
+        # self.run_batch_button.setFont(self.font)
         self.run_batch_button.clicked.connect(self.run_batch)
         layout.addWidget(self.run_batch_button)
 
@@ -330,9 +331,10 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.thread.start()
     
     def run_batch(self):
-        # self.total = len(self.get_all_tiff_files(self.sources_folder))
+        self.n_images = len(self.get_all_tiff_files(self.sources_folder))
         self.pbr = progress()
         self.pbr.set_description("Running on folder...")
+        self.run_batch_button.setText(f"▶ Run batch ({str(1).zfill(2)}/{self.n_images})")
         self.set_active_ui(False)
         self.thread = QThread()
 
@@ -360,6 +362,8 @@ class MicrogliaAnalyzerWidget(QWidget):
     def end_batch(self):
         self.pbr.close()
         self.set_active_ui(True)
+        self.n_images = 0
+        self.run_batch_button.setText("▶ Run batch")
         show_info("Batch completed.")
 
     def write_measures(self):
@@ -452,10 +456,12 @@ class MicrogliaAnalyzerWidget(QWidget):
 
     def update_pbr(self, text, current, total):
         self.pbr.set_description(text)
-        if (total != self.total):
-            self.pbr.reset(total=total)
-            self.total = total
-        self.pbr.update(current)
+        # if (total != self.total):
+        #     self.pbr.reset(total=total)
+        #     self.total = total
+        if (self.n_images > 0):
+            self.run_batch_button.setText(f"▶ Run batch ({str(current+1).zfill(2)}/{self.n_images})")
+        # self.pbr.update(current)
 
     def clear_attributes(self):
         self.sources_folder = None

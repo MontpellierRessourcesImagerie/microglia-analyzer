@@ -309,21 +309,6 @@ class MicrogliaAnalyzer(object):
             used.add(i)
         self.classifications = clean_boxes
     
-    def _bind_classifications(self):
-        labeled = self.mask
-        regions = regionprops(labeled)
-        bindings = {int(l): (None, 0.0, None) for l in np.unique(labeled) if l != 0} # label: (class, IoU)
-        for region in regions:
-            seg_bbox = list(map(int, region.bbox))
-            bindings[region.label] = (0, 0.0, seg_bbox)
-            for box, cls in zip(self.classifications['boxes'], self.classifications['classes']):
-                x1, y1, x2, y2 = list(map(int, box))
-                detect_bbox = [y1, x1, y2, x2]
-                iou = calculate_iou(seg_bbox, detect_bbox)
-                if iou > bindings[region.label][1]: # iou > 0.2 and
-                    bindings[region.label] = (cls, iou, seg_bbox)
-        self.bindings = bindings
-    
     def bind_classifications(self):
         labeled = self.mask
         regions = regionprops(labeled)
@@ -381,20 +366,12 @@ class MicrogliaAnalyzer(object):
             if label == 0:
                 continue
             mask = (self.mask == label).astype(np.uint8)
+            if np.sum(mask) < 3:
+                continue
             results[label], skeleton = self.analyze_skeleton(mask)
             skeletons = np.maximum(skeletons, skeleton)
         self.graph_metrics = results
         self.skeleton = skeletons
-    
-    def sorted_by_class(self, bindings, common_labels):
-        sorted_bindings = {}
-        for label, (cls, iou, seg_bbox) in bindings.items():
-            if label not in common_labels:
-                continue
-            if cls not in sorted_bindings:
-                sorted_bindings[cls] = []
-            sorted_bindings[cls].append((label, iou, seg_bbox))
-        return sorted_bindings
 
     def sort_labels_by_class(self, data, valid_labels):
         filtered = {label: value for label, value in data.items() if label in valid_labels}
