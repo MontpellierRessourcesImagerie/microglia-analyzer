@@ -30,7 +30,8 @@ _PATCHES_SETTINGS = [
     ( 64,  32, (  64,  128)),
     ( 64,  32, ( 128,   64)),
     ( 64,  32, ( 128,  128)),
-    (512, 128, (2048, 2048))
+    (512, 128, (2048, 2048)),
+    (512, 128, (1024, 1024))
 ]
 
 # (Number of patches Y-axis, Number of patches X-axis)
@@ -43,7 +44,8 @@ _GRID_GROUND_TRUTH = [
     (1, 3),
     (3, 1),
     (3, 3),
-    (5, 5)
+    (5, 5),
+    (3, 3)
 ]
 
 # Blending between patches (for tiles_to_image)

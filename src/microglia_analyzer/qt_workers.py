@@ -33,7 +33,7 @@ class QtSegmentMicroglia(QObject):
         local_version = 0
         with open(v_path, 'r') as f:
             local_version = int(f.read().strip())
-        if local_version < int(self.versions['µnet']['version']):
+        if local_version != int(self.versions['µnet']['version']):
             download_from_web(self.versions['µnet']['url'], self.model_path)
             print("Model updated.")
             return
@@ -79,7 +79,7 @@ class QtClassifyMicroglia(QObject):
         local_version = 0
         with open(v_path, 'r') as f:
             local_version = int(f.read().strip())
-        if local_version < int(self.versions['µyolo']['version']):
+        if local_version != int(self.versions['µyolo']['version']):
             download_from_web(self.versions['µyolo']['url'], self.model_path)
             print("Model updated.")
             return

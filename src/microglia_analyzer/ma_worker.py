@@ -232,15 +232,29 @@ class MicrogliaAnalyzer(object):
     def segmentation_postprocessing(self):
         self.mask = (self.probability_map > self.segmentation_threshold).astype(np.uint8)
         self.mask = self.filter_cc_by_size(self.mask)
-        selem = morphology.diamond(2)
+        selem = morphology.diamond(4)
         self.mask = morphology.binary_closing(self.mask, selem)
         # self.mask = morphology.binary_fill_holes(self.mask)
         self.mask = label(self.mask, connectivity=2)
-        
-    def classification_inference(self):
-        yolo_input = self.image.copy() # normalize(self.image, 0, 255, np.uint8)
+    
+    def _filter_garbage(self, garbage=0):
+        filtered_bboxes = {
+            'boxes': [],
+            'scores': [],
+            'classes': []
+        }
+        for box, score, cls in zip(self.bboxes['boxes'], self.bboxes['scores'], self.bboxes['classes']):
+            if cls == garbage:
+                continue
+            filtered_bboxes['boxes'].append(box)
+            filtered_bboxes['scores'].append(score)
+            filtered_bboxes['classes'].append(cls)
+        self.bboxes = filtered_bboxes
+
+    def classification_inference(self, remove_garbage=True):
+        yolo_input = normalize(self.image.copy(), 0, 255, np.uint8)
         tiles_manager = ImageTiler2D(self.yolo_tile_size, self.yolo_overlap, self.image.shape)
-        tiles = tiles_manager.image_to_tiles(yolo_input, True, 0, 255, np.uint8)
+        tiles = tiles_manager.image_to_tiles(yolo_input, False)
         results = self.classification_model(tiles)
         self.bboxes = {'boxes': [], 'scores': [], 'classes': []}
         for i, img_results in enumerate(results.xyxy):
@@ -252,6 +266,8 @@ class MicrogliaAnalyzer(object):
             self.bboxes['boxes'] += boxes
             self.bboxes['scores'] += scores
             self.bboxes['classes'] += classes
+        if remove_garbage:
+            self._filter_garbage(0)
     
     def classification_postprocessing(self):
         """
@@ -369,23 +385,33 @@ class MicrogliaAnalyzer(object):
         self.graph_metrics = results
         self.skeleton = skeletons
     
+    def sorted_by_class(self, bindings, common_labels):
+        sorted_bindings = {}
+        for label, (cls, iou, seg_bbox) in bindings.items():
+            if label not in common_labels:
+                continue
+            if cls not in sorted_bindings:
+                sorted_bindings[cls] = []
+            sorted_bindings[cls].append((label, iou, seg_bbox))
+        return sorted_bindings
+
+    def sort_labels_by_class(self, data, valid_labels):
+        filtered = {label: value for label, value in data.items() if label in valid_labels}
+        sorted_labels = sorted(filtered.keys(), key=lambda label: filtered[label][0])
+        return sorted_labels
+
     def as_csv(self, identifier):
-        """
-        Merge two dictionaries into a CSV file.
-        - dict1: A dictionary containing nested dictionaries with graph measures.
-        - dict2: A dictionary containing tuples where only the first two elements (IoU and Class) are relevant.
-        - output_file: The name of the output CSV file.
-        """
         common_labels = set(self.graph_metrics.keys()) & set(self.bindings.keys())
         if len(common_labels) == 0:
             return None
+        sorted_labels = self.sort_labels_by_class(self.bindings, common_labels)
         
-        first_label = next(iter(common_labels))
+        first_label = sorted_labels[0]
         graph_measure_keys = list(self.graph_metrics[first_label].keys())
         headers = ["Identifier"] + graph_measure_keys + ["IoU", "Class"]
         buffer = [", ".join(headers)]
 
-        for i, label in enumerate(common_labels):
+        for i, label in enumerate(sorted_labels):
             values = [""]
             if i == 0:
                 values[0] = identifier

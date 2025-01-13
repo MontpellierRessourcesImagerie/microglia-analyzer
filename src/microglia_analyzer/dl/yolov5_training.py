@@ -4,6 +4,7 @@ import shutil
 import numpy as np
 import re
 from cv2 import imread
+# from tifffile import imread
 from yolov5 import train
 
 """
@@ -50,12 +51,12 @@ Before starting using this script, please make sure that:
 
 #@markdown ## 📍 a. Data paths
 
-data_folder       = "/home/benedetti/Documents/projects/2060-microglia/yolo-user-annotations/"
+data_folder       = "/home/benedetti/Documents/projects/2060-microglia/data/training-data/clean-v002"
 qc_folder         = None
 inputs_name       = "images"
 annotations_name  = "labels"
-models_path       = "/home/benedetti/Documents/projects/2060-microglia/yolo-models/"
-working_directory = "/home/benedetti/Documents/projects/2060-microglia/yolo-runs/"
+models_path       = "/home/benedetti/Documents/projects/2060-microglia/µyolo"
+working_directory = "/tmp/yolo-train"
 model_name_prefix = "µyolo"
 reset_local_data  = True
 
@@ -68,10 +69,10 @@ classes_names         = ["garbage", "amoeboid", "rod", "intermediate", "homeosta
 optimizer             = 'AdamW'
 learning_rate         = 0.0001
 deterministic         = True
-cos_lr                = True
+cos_lr                = False
 label_smoothing       = 0.0
-overlap_mask          = False
-dropout               = 0.2
+overlap_mask          = True
+dropout               = 0.5
 
 # optimizer: 'SGD', 'Adam', 'AdamW'.
 # deterministic: True, False

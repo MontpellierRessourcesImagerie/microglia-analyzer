@@ -7,6 +7,7 @@ from napari.utils.notifications import show_info
 import tifffile
 import skimage
 
+from skimage.morphology import skeletonize
 import numpy as np
 import os
 
@@ -27,6 +28,8 @@ _IMAGE_LAYER  = "µ-glia-image"
 Layer containing the manual annotations (masks) of microglia.
 """
 _MASKS_LAYER  = "µ-glia-mask"
+
+_SKELETON_LAYER = "µ-skeleton"
 
 """
 Colors assigned to each YOLO class.
@@ -332,6 +335,10 @@ class AnnotationsWidget(QWidget):
         if _MASKS_LAYER in self.viewer.layers:
             tifffile.imwrite(mask_path, self.viewer.layers[_MASKS_LAYER].data)
             show_info("Masks saved.")
+            if _SKELETON_LAYER in self.viewer.layers:
+                self.viewer.layers[_SKELETON_LAYER].data = skeletonize(self.viewer.layers[_MASKS_LAYER].data)
+            else:
+                layer = self.viewer.add_image(skeletonize(self.viewer.layers[_MASKS_LAYER].data), name=_SKELETON_LAYER, blending='additive')
     
     # ----------------- METHODS -------------------------------------------
 
@@ -474,7 +481,7 @@ class AnnotationsWidget(QWidget):
         Args:
             - directory (str): The absolute path to the root directory.
         """
-        folders = sorted([f for f in os.listdir(directory) if (not f.endswith('-labels')) and os.path.isdir(os.path.join(directory, f))])
+        folders = sorted([f for f in os.listdir(directory) if (not f.endswith('-labels')) and (not f.endswith('-masks')) and os.path.isdir(os.path.join(directory, f))])
         folders = ["---"] + folders
         self.inputs_name.clear()
         self.inputs_name.addItems(folders)

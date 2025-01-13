@@ -20,9 +20,9 @@ class Patch2D(object):
         self.patch_size    = patch_size
         # Minimum overlap between patches, in number of pixels.
         self.overlap       = overlap
-        # Indices (y, x) of this patch within the grid.
+        # Indices (y, x) of this patch within the grid of patches.
         self.indices       = indices
-        # Shape of the global image.
+        # Shape of the global image (height, width).
         self.shape         = shape
         # Grid size (number of patches on each axis).
         self.grid          = grid
@@ -87,13 +87,13 @@ class Patch2D(object):
         """
         y, x = self.indices[0] * self.step, self.indices[1] * self.step
         if self.has_neighbour[0]:
-            self.overlaps[0] = max(self.overlap, x - self.ul_corner[1])
+            self.overlaps[0] = x + self.overlap - self.ul_corner[1]
         if self.has_neighbour[1]:
-            self.overlaps[1] = self.overlap if (self.lr_corner[0] + self.patch_size - self.overlap <= self.shape[0]) else (self.shape[0] - self.lr_corner[0])
+            self.overlaps[1] = max(-self.shape[0] + y + 2 * self.patch_size, self.overlap)
         if self.has_neighbour[2]:
-            self.overlaps[2] = self.overlap if (self.lr_corner[1] + self.patch_size - self.overlap <= self.shape[1]) else (self.shape[1] - self.lr_corner[1])
+            self.overlaps[2] = max(-self.shape[1] + x + 2 * self.patch_size, self.overlap)
         if self.has_neighbour[3]:
-            self.overlaps[3] = max(self.overlap, y - self.ul_corner[0])
+            self.overlaps[3] = y + self.overlap - self.ul_corner[0]
     
     def as_napari_rectangle(self):
         """

@@ -115,3 +115,8 @@ def download_from_web(url, extract_to, timeout=100):
         except Exception as e:
             print(f"Unknown decompression error: {e}")
             raise
+
+if __name__ == "__main__":
+    url = "https://dev.mri.cnrs.fr/attachments/download/3623/%C2%B5net.zip"
+    extract_to = "/tmp/µnet"
+    download_from_web(url, extract_to)

@@ -136,7 +136,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         h_layout.addWidget(self.minimal_area_label)
         self.minimal_area_input = QSpinBox()
         self.minimal_area_input.setRange(0, 1000000)
-        self.minimal_area_input.setValue(110)
+        self.minimal_area_input.setValue(40)
         self.minimal_area_input.valueChanged.connect(self.min_area_update)
         h_layout.addWidget(self.minimal_area_input)
         layout.addLayout(h_layout)
@@ -330,8 +330,8 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.thread.start()
     
     def run_batch(self):
-        self.total = len(self.get_all_tiff_files(self.sources_folder))
-        self.pbr = progress(total=self.total)
+        # self.total = len(self.get_all_tiff_files(self.sources_folder))
+        self.pbr = progress()
         self.pbr.set_description("Running on folder...")
         self.set_active_ui(False)
         self.thread = QThread()

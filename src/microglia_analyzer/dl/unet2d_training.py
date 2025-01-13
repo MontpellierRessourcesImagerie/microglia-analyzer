@@ -12,9 +12,7 @@ from skimage.morphology import binary_dilation, diamond, skeletonize
 import pandas as pd
 from tabulate import tabulate
 
-# from microglia_analyzer.dl.losses import (dice_loss, bce_dice_loss, 
-#                                           skeleton_recall, dice_skeleton_loss)
-from losses import (dice_loss, bce_dice_loss, skeleton_recall, dice_skeleton_loss)
+from losses import (dice_loss, bce_dice_loss, dual_dice_loss, dice_skeleton_loss)
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -79,12 +77,12 @@ from tensorflow.keras.utils import plot_model
 
 ## 📍 a. Data paths
 
-data_folder       = "/home/benedetti/Downloads/training-audrey"
+data_folder       = "/home/benedetti/Documents/projects/2060-microglia/data/training-data/experimental"
 qc_folder         = None
-inputs_name       = "inputs"
-masks_name        = "masks"
-models_path       = "/home/benedetti/Downloads/training-audrey/models"
-working_directory = "/tmp/unet_working/"
+inputs_name       = "microglia"
+masks_name        = "microglia-masks"
+models_path       = "/home/benedetti/Documents/projects/2060-microglia/µnet"
+working_directory = "/tmp/unet_working"
 model_name_prefix = "unet"
 reset_local_data  = True
 remove_wrong_data = True
@@ -95,23 +93,23 @@ data_usage        = None
 validation_percentage = 0.15
 batch_size            = 8
 epochs                = 500
-unet_depth            = 2
+unet_depth            = 4
 num_filters_start     = 32
-dropout_rate          = 0.25
+dropout_rate          = 0.5
 optimizer             = 'Adam'
 learning_rate         = 0.001
 skeleton_coef         = 0.2
-bce_coef              = 0.5
+bce_coef              = 0.3
 early_stop_patience   = 50
 dilation_kernel       = diamond(1)
-loss                  = dice_skeleton_loss(skeleton_coef, bce_coef)
+loss                  = bce_dice_loss(bce_coef) # dice_skeleton_loss(skeleton_coef, bce_coef)
 
 ## 📍 c. Data augmentation
 
 use_data_augmentation = True
 use_mirroring         = True
-use_gaussian_noise    = False
-noise_scale           = 0.001
+use_gaussian_noise    = True
+noise_scale           = 0.0005
 use_random_rotations  = True
 angle_range           = (-90, 90)
 use_gamma_correction  = True
@@ -457,7 +455,7 @@ def migrate_data(targets, source):
 
 ## 📍 a. Data augmentation functions
 
-def deteriorate_image(image, mask, num_points=25):
+def deteriorate_image(image, mask, num_points=5):
     """
     Attempts to deteriorate the original image by making holes along the path.
     """
@@ -472,9 +470,13 @@ def deteriorate_image(image, mask, num_points=25):
     new_image = np.full_like(mask, 0, dtype=np.uint8)
     for point in selected_points:
         new_image[point[0], point[1]] = 255
-    new_image = 1.0 - binary_dilation(new_image, footprint=dilation_kernel).astype(np.float32)
-    new_image = gaussian_filter(new_image, sigma=2.0)
+    dk = diamond(random.randint(3, 5))
+    new_image = 1.0 - binary_dilation(new_image, footprint=dk).astype(np.float32)
+    new_image = gaussian_filter(new_image, sigma=1.0+random.random())
+    new_image *= 0.5
+    new_image += 0.5
     image *= new_image
+    # mask *= (1.0 - new_image)
     return np.expand_dims(image, axis=-1), np.expand_dims(mask, axis=-1)
 
 def random_flip(image, mask):
@@ -641,8 +643,8 @@ def open_pair(input_path, mask_path, training, img_only):
     raw_img = tifffile.imread(input_path)
     raw_img = np.expand_dims(raw_img, axis=-1)
     raw_mask = tifffile.imread(mask_path)
-    # raw_mask = skeletonize(raw_mask)
-    # raw_mask = binary_dilation(raw_mask)
+    raw_mask = skeletonize(raw_mask)
+    raw_mask = binary_dilation(raw_mask)
     raw_mask = raw_mask.astype(np.float32)
     raw_mask /= np.max(raw_mask)
     raw_mask = np.expand_dims(raw_mask, axis=-1)
@@ -823,12 +825,10 @@ def create_unet2d_model(input_shape):
         x = Conv2DTranspose(num_filters, (3, 3), strides=(1, 1), padding='same')(x)
         x = attention_block(skip_connections[i], x, intermediate_channels=8)
         x = concatenate([x, skip_connections[i]])
-        x = Conv2D(num_filters, 3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
-        # x = BatchNormalization()(x)
-        x = Conv2D(num_filters, 3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
+        x = Conv2D(num_filters, 3, activation='sigmoid', padding='same', kernel_initializer='he_normal')(x)
+        x = Conv2D(num_filters, 3, activation='sigmoid', padding='same', kernel_initializer='he_normal')(x)
         if i > 0:
             x = BatchNormalization()(x)
-        # x = BatchNormalization()(x)
 
     outputs = Conv2D(1, 1, activation='sigmoid')(x)
     model = Model(inputs=inputs, outputs=outputs)

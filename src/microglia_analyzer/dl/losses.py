@@ -41,6 +41,11 @@ def dice_loss(y_true, y_pred):
     intersection = tf.reduce_sum(y_true * y_pred)
     return 1 - (2. * intersection + 1) / (tf.reduce_sum(y_true) + tf.reduce_sum(y_pred) + 1)
 
+def dual_dice_loss(y_true, y_pred):
+    c1 = 0.3
+    c2 = 1.0 - c1
+    return c1 * dice_loss(y_true, y_pred) + c2 * dice_loss(1 - y_true, 1 - y_pred)
+
 def bce_dice_loss(bce_coef=0.5):
     def bcl(y_true, y_pred):
         bce = tf.keras.losses.binary_crossentropy(y_true, y_pred)
@@ -54,3 +59,6 @@ def dice_skeleton_loss(skeleton_coef=0.5, bce_coef=0.5):
         y_pred = tf.square(y_pred)
         return (1.0 - skeleton_coef) * bdl(y_true, y_pred) + skeleton_coef * skeleton_recall(y_true, y_pred)
     return _dice_skeleton_loss
+
+def dsl(y_true, y_pred):
+    return dice_skeleton_loss(0.5, 0.5)(y_true, y_pred)

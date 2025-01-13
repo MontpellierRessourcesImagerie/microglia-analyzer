@@ -1,6 +1,6 @@
 import numpy as np
 from PIL import Image
-from microglia_analyzer.tiles.tiler import ImageTiler2D
+from microglia_analyzer.tiles.tiler import ImageTiler2D, normalize
 import tifffile
 
 def generate_checkerboard(width, height, num_squares_x, num_squares_y):
@@ -53,7 +53,7 @@ def generate_checkerboard(width, height, num_squares_x, num_squares_y):
     img = Image.fromarray(checkerboard)
     return img
 
-if __name__ == "__main__":
+if __name__ == "":
     import os
     import tifffile
     import numpy as np
@@ -62,12 +62,13 @@ if __name__ == "__main__":
 
     shapes = [
         (2048, 2048), 
-        (1024, 1024)
+        # (1024, 1024)
     ]
     for shape in shapes:
         print("-----------")
         image = np.ones(shape, dtype=np.float32)
         tiles_manager = ImageTiler2D(512, 128, shape)
+        print("Grid: ", tiles_manager.grid_size)
         for t in tiles_manager.layout:
             print(t)
         tiles = tiles_manager.image_to_tiles(image)
@@ -76,14 +77,22 @@ if __name__ == "__main__":
             tifffile.imwrite(os.path.join(output_path, f"{shape[0]}_{str(i).zfill(2)}.tif"), tiles_manager.blending_coefs[i])
         tifffile.imwrite(os.path.join(output_path, f"{shape[0]}_merged.tif"), merged)
 
-if __name__ == "":
-    # Générer une image de 2048x2048 avec des cases de 128x128
-    checkerboard_img = np.squeeze(np.array(generate_checkerboard(2048, 2048, 16, 16)))
-    tifffile.imwrite("/tmp/original.tif", checkerboard_img)
-    tiles_manager = ImageTiler2D(512, 128, checkerboard_img.shape)
-    tiles = tiles_manager.image_to_tiles(checkerboard_img)
-    tifffile.imwrite("/tmp/checkerboard.tif", tiles)
-    merged = tiles_manager.tiles_to_image(tiles)
-    tifffile.imwrite("/tmp/merged.tif", merged)
-    tifffile.imwrite("/tmp/coefs.tif", tiles_manager.blending_coefs)
-    tifffile.imwrite("/tmp/gradient.tif", tiles_manager.tiles_to_image(tiles_manager.blending_coefs))
+if __name__ == "__main__":
+    import os
+    import random
+    output_folder = "/tmp/dump/"
+    os.makedirs(output_folder, exist_ok=True)
+    for i in range(15):
+        sub_folder = os.path.join(output_folder, str(i).zfill(2))
+        os.makedirs(sub_folder, exist_ok=True)
+        Y = random.randint(512, 2048)
+        X = random.randint(512, 2048)
+        checkerboard_img = normalize(np.squeeze(np.array(generate_checkerboard(Y, X, 16, 16))))
+        tifffile.imwrite(os.path.join(sub_folder, "original.tif"), checkerboard_img)
+        tiles_manager = ImageTiler2D(512, 128, checkerboard_img.shape)
+        tiles = tiles_manager.image_to_tiles(checkerboard_img)
+        tifffile.imwrite(os.path.join(sub_folder, "checkerboard.tif"), tiles)
+        merged = tiles_manager.tiles_to_image(tiles)
+        tifffile.imwrite(os.path.join(sub_folder, "merged.tif"), merged)
+        tifffile.imwrite(os.path.join(sub_folder, "coefs.tif"), tiles_manager.blending_coefs)
+        tifffile.imwrite(os.path.join(sub_folder, "gradient.tif"), tiles_manager.tiles_to_image(tiles_manager.blending_coefs))
