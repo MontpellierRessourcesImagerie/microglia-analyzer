@@ -20,7 +20,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL']  = '3'
 
 import torch
 import tensorflow as tf
-from microglia_analyzer.dl.losses import dice_skeleton_loss, bce_dice_loss
+from microglia_analyzer.dl.losses import dice_skeleton_loss, bce_dice_loss, dsl
 
 class MicrogliaAnalyzer(object):
     
@@ -143,7 +143,8 @@ class MicrogliaAnalyzer(object):
             model_path,
             custom_objects={
                 "bcl": bce_dice_loss(self.unet_bce_coef),
-                "dsl": dice_skeleton_loss(self.unet_skeleton_coef, self.unet_bce_coef)
+                "dsl": dice_skeleton_loss(self.unet_skeleton_coef, self.unet_bce_coef),
+                "dice_skeleton_loss": dsl
             }
         )
 
