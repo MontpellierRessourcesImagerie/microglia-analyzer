@@ -334,7 +334,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.n_images = len(self.get_all_tiff_files(self.sources_folder))
         self.pbr = progress()
         self.pbr.set_description("Running on folder...")
-        self.run_batch_button.setText(f"▶ Run batch ({str(1).zfill(2)}/{self.n_images})")
+        self.run_batch_button.setText(f"▶ Run batch ({str(1).zfill(2)}/{str(self.n_images).zfill(2)})")
         self.set_active_ui(False)
         self.thread = QThread()
 
@@ -460,7 +460,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         #     self.pbr.reset(total=total)
         #     self.total = total
         if (self.n_images > 0):
-            self.run_batch_button.setText(f"▶ Run batch ({str(current+1).zfill(2)}/{self.n_images})")
+            self.run_batch_button.setText(f"▶ Run batch ({str(current+1).zfill(2)}/{str(self.n_images).zfill(2)})")
         # self.pbr.update(current)
 
     def clear_attributes(self):

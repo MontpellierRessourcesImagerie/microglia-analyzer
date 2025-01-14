@@ -34,6 +34,8 @@ dependencies = [
     "torch",
     "tensorflow==2.16.1",
     "skan"
+    "ultralytics"
+    "yolov5"
 ]
 
 # Required for documentation: tabs, sphinx_sphinx, myst_parser, sphinx_rtd_theme

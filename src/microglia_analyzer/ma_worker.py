@@ -366,9 +366,11 @@ class MicrogliaAnalyzer(object):
             if label == 0:
                 continue
             mask = (self.mask == label).astype(np.uint8)
-            if np.sum(mask) < 3:
+            try:
+                r, s = self.analyze_skeleton(mask)
+            except:
                 continue
-            results[label], skeleton = self.analyze_skeleton(mask)
+            results[label], skeleton = r, s
             skeletons = np.maximum(skeletons, skeleton)
         self.graph_metrics = results
         self.skeleton = skeletons
