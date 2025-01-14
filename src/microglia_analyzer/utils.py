@@ -5,6 +5,7 @@ import tempfile
 import os
 import numpy as np
 import shutil
+from microglia_analyzer import TIFF_REGEX
 from microglia_analyzer.tiles.tiler import normalize
 
 BBOX_COLORS = [
@@ -115,6 +116,22 @@ def download_from_web(url, extract_to, timeout=100):
         except Exception as e:
             print(f"Unknown decompression error: {e}")
             raise
+
+def get_all_tiff_files(folder_path, no_ext=False):
+        """
+        Probes a folder and filters its content with a regex.
+        All the TIFF are returned, whatever the number of 'f' or the case.
+        If the `no_ext` attribute is True, the name is returned without the extension.
+        """
+        tiff_files = []
+        for file_name in os.listdir(folder_path):
+            match = TIFF_REGEX.match(file_name)
+            if match:
+                if no_ext:
+                    tiff_files.append(match.group(1))
+                else:
+                    tiff_files.append(match.group(0))
+        return sorted(tiff_files)
 
 if __name__ == "__main__":
     url = "https://dev.mri.cnrs.fr/attachments/download/3623/%C2%B5net.zip"

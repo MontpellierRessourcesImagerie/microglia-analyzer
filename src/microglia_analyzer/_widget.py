@@ -18,7 +18,7 @@ import os
 import re
 
 from microglia_analyzer import TIFF_REGEX
-from microglia_analyzer.utils import boxes_as_napari_shapes, BBOX_COLORS
+from microglia_analyzer.utils import get_all_tiff_files, boxes_as_napari_shapes, BBOX_COLORS
 from microglia_analyzer.ma_worker import MicrogliaAnalyzer
 from microglia_analyzer.qt_workers import (QtSegmentMicroglia, QtClassifyMicroglia,
                                           QtMeasureMicroglia, QtBatchRunners)
@@ -331,7 +331,9 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.thread.start()
     
     def run_batch(self):
-        self.n_images = len(self.get_all_tiff_files(self.sources_folder))
+        sources = get_all_tiff_files(self.sources_folder)
+        print("Found sources: ", sources)
+        self.n_images = len(sources)
         self.pbr = progress()
         self.pbr.set_description("Running on folder...")
         self.run_batch_button.setText(f"▶ Run batch ({str(1).zfill(2)}/{str(self.n_images).zfill(2)})")
@@ -476,29 +478,13 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.calibration_input.clear()
         self.pixel_size_label.setText("Pixel size: ---")
 
-    def get_all_tiff_files(self, folder_path, no_ext=False):
-        """
-        Probes a folder and filters its content with a regex.
-        All the TIFF are returned, whatever the number of 'f' or the case.
-        If the `no_ext` attribute is True, the name is returned without the extension.
-        """
-        tiff_files = []
-        for file_name in os.listdir(folder_path):
-            match = TIFF_REGEX.match(file_name)
-            if match:
-                if no_ext:
-                    tiff_files.append(match.group(1))
-                else:
-                    tiff_files.append(match.group(0))
-        return sorted(tiff_files)
-
     def set_sources_folder(self, folder_path):
         if (folder_path is None) or (folder_path == ""):
             show_info("No folder selected")
             return
         self.sources_folder = folder_path
         self.images_combo.clear()
-        self.images_combo.addItems(self.get_all_tiff_files(folder_path))
+        self.images_combo.addItems(get_all_tiff_files(folder_path))
     
     def reset_layers(self):
         if _SEGMENTATION_LAYER_NAME in self.viewer.layers:

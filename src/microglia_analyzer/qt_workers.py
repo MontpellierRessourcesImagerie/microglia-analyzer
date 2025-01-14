@@ -3,7 +3,7 @@ from PyQt5.QtCore import pyqtSignal
 import requests
 import os
 import numpy as np
-from microglia_analyzer.utils import download_from_web
+from microglia_analyzer.utils import download_from_web, get_all_tiff_files
 from microglia_analyzer.ma_worker import MicrogliaAnalyzer
 import tifffile
 
@@ -125,7 +125,7 @@ class QtBatchRunners(QObject):
         self.pbr = pbr
         self.source_dir = source_dir
         self.settings = settings
-        self.images_pool = [f for f in os.listdir(source_dir) if f.endswith(".tif")]
+        self.images_pool = get_all_tiff_files(source_dir)
         self.csv_lines = []
 
     def workflow(self, index):
