@@ -4,11 +4,13 @@
 ![Python Version](https://img.shields.io/badge/Python-3.9|3.10|3.11-blue?logo=python)
 ![Unit tests](https://img.shields.io/github/actions/workflow/status/MontpellierRessourcesImagerie/microglia-analyzer/test_and_deploy.yml?logo=pytest&label=tests)
 
-A Napari plugin allowing to detect and segment microglia on fluorescent images.
+# What is it?
+
+A Napari plugin that allows for the segmentation and detection of microglia on fluorescent images.
 
 It consists in:
-- Detecting the microglia with a YOLOv5 model.
-- Segmenting them with a UNet model.
+- Segmenting the microglia with a UNet2D model.
+- Create classified bounding-boxes with a YOLOv5.
 - Using some morphology to extract metrics such as:
     - The total length
     - The length of the longest path
@@ -16,60 +18,67 @@ It consists in:
     - The number of vertices
     - Area of the convex hull
     - Solidity/extent
+- We end-up with a TSV file containing all these metrics.
 
-----------------------------------
+# 01. How to install/upgrade it?
 
-This [napari] plugin was generated with [Cookiecutter] using [@napari]'s [cookiecutter-napari-plugin] template.
+## Install
 
-<!--
-Don't miss the full getting started guide to set up your new package:
-https://github.com/napari/cookiecutter-napari-plugin#getting-started
+```
+pip install git+https://github.com/MontpellierRessourcesImagerie/microglia-analyzer.git napari[all]
+```
 
-and review the napari docs for plugin developers:
-https://napari.org/stable/plugins/index.html
--->
+## Upgrade
 
-## Installation
+```
+pip install --upgrade git+https://github.com/MontpellierRessourcesImagerie/microglia-analyzer.git
+```
 
-You can install `microglia-analyzer` via [pip]:
+# 02. How to use it?
 
-    pip install microglia-analyzer
+# A. Open the widget
 
+- First of all, you need all your images to be converted to TIFF, and placed in the same folder.
+- Once Napari is opened, you can visit your plugins list. It should contain a `Microglia Analyzer` entry.
+    - `Tiles Creator` allows you to create patches to annotate if you ever want to retrain the UNet or the YOLOv5.
+    - `Annotations Helper` allows you to define and create classified bounding-boxes exported under the YOLOv5 format as well as masks. This widget is meant to help you create some ground-truth data.
+    - `Microglia Analyzer` contains the whole analysis workflow.
 
+# B. Load your images
 
-To install latest development version :
+- Click the `📁 Sources folder` button and navigate to the folder containing your TIFF images before pressing OK.
+- In the drop-down menu below, you can choose the image on which you want to run the analysis.
+- In the "Calibration" field, you just have to provide the size of your pixels in physical unit and confirm. Your image may look small after this step, so you may want to press the button with a little picture of home in the lower-left corner of Napari's window.
 
-    pip install git+https://github.com/MontpellierRessourcesImagerie/microglia-analyzer.git
+# C. Segment your microglia
 
+- Press the `🔍 Segment` button and wait for the labeled microglia to show up.
+- The first time, this step may take a little longer as the plugin must download the deep-learning model from MRI's server.
+- You can adjust the area of the smallest tolerated object either before or after the segmentation, both ways work.
+- At this point, each individual microglia should be represented by its own color.
+- We focused the segmentation on the "graph" produced by microglia, so the soma won't look thicker than any other part of the microglia.
 
-## Contributing
+# D. Classify your microglia
 
-Contributions are very welcome. Tests can be run with [tox], please ensure
-the coverage at least stays the same before you submit a pull request.
+- Click the `Classify` button.
+- Once again, a model has to be downloaded from MRI's server.
+- By the end of this step, you should have a colored bounding-box around each tolerated microglia.
+- The color indicates which class it belongs to (amoeboid, intermediate ou homeostatic).
+- The color code should show up in the array below the classification button.
+- If you wish, you can adjust the prediction threshold ("how sure the model is about what it sees")
 
-## License
+# E. Measure your microglia
 
-Distributed under the terms of the [MIT] license,
-"microglia-analyzer" is free and open source software
+- If you click on the `📊 Measure` button, the skeleton of each microglia should appear.
+- The measures are generated and stored in a `.tsv` file located in the `controls` sub-folder (auto-generated in your images' folder)
 
-## Issues
+# F. Analyze the whole folder
 
-If you encounter any problems, please [file an issue] along with a detailed description.
+- Once you got to that point, each parameter is correctly set (as you just used them for an image), so you click the `▶ Run batch` to apply them to the whole folder.
+- The button should now indicate `■ Kill batch (i/N)`. You can click it to interrupt the execution. `i` is the rank of the current image, and `N` is the number of images detected in the folder.
+- By the end of the run, the button should be normal again, and a `results.tsv` file should be located in the `controls` folder.
 
-[napari]: https://github.com/napari/napari
-[Cookiecutter]: https://github.com/audreyr/cookiecutter
-[@napari]: https://github.com/napari
-[MIT]: http://opensource.org/licenses/MIT
-[BSD-3]: http://opensource.org/licenses/BSD-3-Clause
-[GNU GPL v3.0]: http://www.gnu.org/licenses/gpl-3.0.txt
-[GNU LGPL v3.0]: http://www.gnu.org/licenses/lgpl-3.0.txt
-[Apache Software License 2.0]: http://www.apache.org/licenses/LICENSE-2.0
-[Mozilla Public License 2.0]: https://www.mozilla.org/media/MPL/2.0/index.txt
-[cookiecutter-napari-plugin]: https://github.com/napari/cookiecutter-napari-plugin
+--------
 
-[file an issue]: https://github.com/MontpellierRessourcesImagerie/microglia-analyzer/issues
-
-[napari]: https://github.com/napari/napari
-[tox]: https://tox.readthedocs.io/en/latest/
-[pip]: https://pypi.org/project/pip/
-[PyPI]: https://pypi.org/
+[🐛 Found a bug?]: https://github.com/MontpellierRessourcesImagerie/microglia-analyzer/issues
+[🔍 Need some help?]: mri-cia@mri.cnrs.fr
