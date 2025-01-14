@@ -1,5 +1,5 @@
 from qtpy.QtCore import QObject
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, pyqtSlot
 import requests
 import os
 import numpy as np
@@ -119,14 +119,21 @@ class QtBatchRunners(QObject):
     
     finished = pyqtSignal()
     update   = pyqtSignal(str, int, int)
+    to_kill  = pyqtSignal()
 
     def __init__(self, pbr, source_dir, settings):
         super().__init__()
+        self.to_kill.connect(self.interupt)
         self.pbr = pbr
         self.source_dir = source_dir
         self.settings = settings
         self.images_pool = get_all_tiff_files(source_dir)
-        self.csv_lines = []
+        self.tsv_lines = []
+        self.is_condamned = False
+
+    @pyqtSlot()
+    def interupt(self):
+        self.is_condamned = True
 
     def workflow(self, index):
         img_path = os.path.join(self.source_dir, self.images_pool[index])
@@ -146,21 +153,28 @@ class QtBatchRunners(QObject):
         ma.classification_postprocessing()
         ma.bind_classifications()
         ma.analyze_as_graph()
-        csv = ma.as_csv(self.images_pool[index])
+        tsv = ma.as_tsv(self.images_pool[index])
         if index == 0:
-            self.csv_lines += csv
+            self.tsv_lines += tsv
         else:
-            self.csv_lines += csv[1:]
+            self.tsv_lines += tsv[1:]
+        classified = np.zeros_like(ma.mask)
+        for (cls, _, seg_bbox) in ma.bindings.values():
+            classified[seg_bbox[0]:seg_bbox[2], seg_bbox[1]:seg_bbox[3]] = int(cls)
+        mask = (ma.mask > 0).astype(np.uint8) * classified
         control_path = os.path.join(self.source_dir, "controls", self.images_pool[index])
-        tifffile.imwrite(control_path, np.stack([ma.skeleton, ma.mask], axis=0))
+        tifffile.imwrite(control_path, np.stack([ma.skeleton, mask], axis=0))
     
-    def write_csv(self):
-        with open(os.path.join(self.source_dir, "controls", "results.csv"), 'w') as f:
-            f.write("\n".join(self.csv_lines))
+    def write_tsv(self):
+        with open(os.path.join(self.source_dir, "controls", "results.tsv"), 'w') as f:
+            f.write("\n".join(self.tsv_lines))
 
     def run(self):
         for i in range(len(self.images_pool)):
+            if self.is_condamned:
+                return
+            print(f"=== [{str(i+1).zfill(2)}/{str(len(self.images_pool)).zfill(2)}] Processing {self.images_pool[i]}. ===")
             self.workflow(i)
-            self.write_csv()
+            self.write_tsv()
             self.update.emit(self.images_pool[i], i+1, len(self.images_pool))
         self.finished.emit()

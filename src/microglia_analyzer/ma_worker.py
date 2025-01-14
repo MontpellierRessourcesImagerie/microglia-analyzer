@@ -155,7 +155,7 @@ class MicrogliaAnalyzer(object):
         In there, there must be a "weights" folder, containing either 'best.pt' or 'last.pt'.
 
         Args:
-            - path (str): Path of the model's folder (containing 'results.csv' and 'weights').
+            - path (str): Path of the model's folder (containing 'results.tsv' and 'weights').
             - use (str): Either 'best' or 'last', to use either 'best.pt' or 'last.pt'.
             - reload (bool): Whether to force the reload of the model from the online repo.
         """
@@ -222,7 +222,9 @@ class MicrogliaAnalyzer(object):
         """
         labeled_map = label(mask, connectivity=connectivity)
         regions = regionprops(labeled_map)
-        labels_to_keep = [region.label for region in regions if region.area >= self.cc_min_size]
+        n_pixels = int(self.cc_min_size / (self.calibration[0]**2))
+        print(f"Removed items smaller than {self.cc_min_size} µm² ({n_pixels} pixels)")
+        labels_to_keep = [region.label for region in regions if region.area >= n_pixels]
 
         if not labels_to_keep:
             return np.zeros_like(mask, dtype=np.uint8)
@@ -233,9 +235,8 @@ class MicrogliaAnalyzer(object):
     def segmentation_postprocessing(self):
         self.mask = (self.probability_map > self.segmentation_threshold).astype(np.uint8)
         self.mask = self.filter_cc_by_size(self.mask)
-        selem = morphology.diamond(4)
+        selem = morphology.diamond(2)
         self.mask = morphology.binary_closing(self.mask, selem)
-        # self.mask = morphology.binary_fill_holes(self.mask)
         self.mask = label(self.mask, connectivity=2)
     
     def _filter_garbage(self, garbage=0):
@@ -380,7 +381,7 @@ class MicrogliaAnalyzer(object):
         sorted_labels = sorted(filtered.keys(), key=lambda label: filtered[label][0])
         return sorted_labels
 
-    def as_csv(self, identifier):
+    def as_tsv(self, identifier):
         common_labels = set(self.graph_metrics.keys()) & set(self.bindings.keys())
         if len(common_labels) == 0:
             return None
@@ -389,7 +390,7 @@ class MicrogliaAnalyzer(object):
         first_label = sorted_labels[0]
         graph_measure_keys = list(self.graph_metrics[first_label].keys())
         headers = ["Identifier"] + graph_measure_keys + ["IoU", "Class"]
-        buffer = [", ".join(headers)]
+        buffer = ["\t ".join(headers)]
 
         for i, label in enumerate(sorted_labels):
             values = [""]
@@ -399,7 +400,7 @@ class MicrogliaAnalyzer(object):
             class_value, iou = self.bindings[label][:2]
             class_value = self.classes[int(class_value)] if class_value is not None else ""
             values += [graph_measures[key] for key in graph_measure_keys] + [iou, class_value]
-            line = ", ".join([str(v) for v in values])
+            line = "\t ".join([str(v) for v in values])
             buffer.append(line)
 
         return buffer
@@ -419,6 +420,6 @@ if __name__ == "__main__":
     ma.classification_postprocessing()
     ma.bind_classifications()
     ma.analyze_as_graph()
-    csv = ma.as_csv("adulte 3")
-    with open("/tmp/metrics.csv", "w") as f:
-        f.write("\n".join(csv))
+    tsv = ma.as_tsv("adulte 3")
+    with open("/tmp/metrics.tsv", "w") as f:
+        f.write("\n".join(tsv))

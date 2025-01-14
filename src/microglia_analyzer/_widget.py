@@ -137,7 +137,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         h_layout.addWidget(self.minimal_area_label)
         self.minimal_area_input = QSpinBox()
         self.minimal_area_input.setRange(0, 1000000)
-        self.minimal_area_input.setValue(40)
+        self.minimal_area_input.setValue(15)
         self.minimal_area_input.valueChanged.connect(self.min_area_update)
         h_layout.addWidget(self.minimal_area_input)
         layout.addLayout(h_layout)
@@ -231,7 +231,7 @@ class MicrogliaAnalyzerWidget(QWidget):
 
         self.run_batch_button = QPushButton("▶ Run batch")
         # self.run_batch_button.setFont(self.font)
-        self.run_batch_button.clicked.connect(self.run_batch)
+        self.run_batch_button.clicked.connect(self.batch_callback)
         layout.addWidget(self.run_batch_button)
 
         self.microglia_group.setLayout(layout)
@@ -291,6 +291,8 @@ class MicrogliaAnalyzerWidget(QWidget):
     def update_seg_pp(self):
         self.mam.set_cc_min_size(self.minimal_area_input.value())
         self.mam.set_proba_threshold(self.probability_threshold_slider.value() / 100)
+        if _SEGMENTATION_LAYER_NAME not in self.viewer.layers:
+            return
         self.mam.segmentation_postprocessing()
         self.show_microglia()
 
@@ -330,13 +332,26 @@ class MicrogliaAnalyzerWidget(QWidget):
         
         self.thread.start()
     
+    def batch_callback(self):
+        if self.thread is None:
+            self.run_batch()
+        else:
+            self.interupt_batch()
+
+    def interupt_batch(self):
+        print("!!! Interupting batch...")
+        show_info("Interupting batch...")
+        self.worker.interupt()
+        self.end_worker()
+        self.end_batch()
+
     def run_batch(self):
         sources = get_all_tiff_files(self.sources_folder)
         print("Found sources: ", sources)
         self.n_images = len(sources)
         self.pbr = progress()
         self.pbr.set_description("Running on folder...")
-        self.run_batch_button.setText(f"▶ Run batch ({str(1).zfill(2)}/{str(self.n_images).zfill(2)})")
+        self.run_batch_button.setText(f"■ Kill ({str(1).zfill(2)}/{str(self.n_images).zfill(2)})")
         self.set_active_ui(False)
         self.thread = QThread()
 
@@ -362,15 +377,14 @@ class MicrogliaAnalyzerWidget(QWidget):
     # -------- Methods: ----------------------------------
 
     def end_batch(self):
-        self.pbr.close()
-        self.set_active_ui(True)
+        self.end_worker()
         self.n_images = 0
         self.run_batch_button.setText("▶ Run batch")
         show_info("Batch completed.")
 
     def write_measures(self):
         self.end_worker()
-        measures = self.mam.as_csv(self.images_combo.currentText())
+        measures = self.mam.as_tsv(self.images_combo.currentText())
         skeleton = self.mam.skeleton
         if _SKELETON_LAYER_NAME not in self.viewer.layers:
             layer = self.viewer.add_image(skeleton, name=_SKELETON_LAYER_NAME, colormap='red', blending='additive')
@@ -382,7 +396,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         root_folder = os.path.join(self.sources_folder, "controls")
         if not os.path.exists(root_folder):
             os.makedirs(root_folder)
-        measures_path = os.path.join(root_folder, os.path.splitext(self.images_combo.currentText())[0] + "_measures.csv")
+        measures_path = os.path.join(root_folder, os.path.splitext(self.images_combo.currentText())[0] + "_measures.tsv")
         control_path  = os.path.join(root_folder, os.path.splitext(self.images_combo.currentText())[0] + "_control.tif")
         tifffile.imwrite(control_path, np.stack([self.mam.skeleton, self.mam.mask], axis=0))
         with open(measures_path, 'w') as f:
@@ -442,9 +456,9 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.minimal_area_input.setEnabled(state)
         self.probability_threshold_slider.setEnabled(state)
         self.classify_microglia_button.setEnabled(state)
-        self.run_batch_button.setEnabled(state)
-        self.run_batch_button.setEnabled(state)
         self.export_measures_button.setEnabled(state)
+        # self.run_batch_button.setEnabled(state)
+        
 
     def end_worker(self):
         if self.active_worker:
@@ -455,15 +469,12 @@ class MicrogliaAnalyzerWidget(QWidget):
             self.thread.deleteLater()
             self.set_active_ui(True)
             self.total = -1
+            self.thread = None
 
     def update_pbr(self, text, current, total):
         self.pbr.set_description(text)
-        # if (total != self.total):
-        #     self.pbr.reset(total=total)
-        #     self.total = total
         if (self.n_images > 0):
-            self.run_batch_button.setText(f"▶ Run batch ({str(current+1).zfill(2)}/{str(self.n_images).zfill(2)})")
-        # self.pbr.update(current)
+            self.run_batch_button.setText(f"■ Kill ({str(current+1).zfill(2)}/{str(self.n_images).zfill(2)})")
 
     def clear_attributes(self):
         self.sources_folder = None
