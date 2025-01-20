@@ -1,7 +1,7 @@
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QGroupBox, QTableWidget, 
                             QSpinBox, QHBoxLayout, QPushButton, QHeaderView,
                             QFileDialog, QComboBox, QLabel, QTableWidgetItem,
-                            QSlider, QSpinBox, QFrame, QLineEdit)
+                            QSlider, QSpinBox, QFrame, QLineEdit, QCheckBox)
 
 from qtpy.QtCore import QThread, Qt
 
@@ -15,10 +15,10 @@ from napari.utils import progress
 import tifffile
 import numpy as np
 import os
-import re
+import warnings
 
 from microglia_analyzer import TIFF_REGEX
-from microglia_analyzer.utils import get_all_tiff_files, boxes_as_napari_shapes, BBOX_COLORS
+from microglia_analyzer.utils import get_all_tiff_files, bindings_as_napari_shapes, BBOX_COLORS
 from microglia_analyzer.ma_worker import MicrogliaAnalyzer
 from microglia_analyzer.qt_workers import (QtSegmentMicroglia, QtClassifyMicroglia,
                                           QtMeasureMicroglia, QtBatchRunners)
@@ -26,7 +26,6 @@ from microglia_analyzer.qt_workers import (QtSegmentMicroglia, QtClassifyMicrogl
 _IMAGE_LAYER_NAME          = "µ-Image"
 _SEGMENTATION_LAYER_NAME   = "µ-Segmentation"
 _CLASSIFICATION_LAYER_NAME = "µ-Classification"
-_YOLO_LAYER_NAME           = "µ-YOLO"
 _SKELETON_LAYER_NAME       = "µ-Skeleton"
 
 class MicrogliaAnalyzerWidget(QWidget):
@@ -34,20 +33,19 @@ class MicrogliaAnalyzerWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.viewer = napari.current_viewer()
-        self.mam = MicrogliaAnalyzer(lambda x: print(x))
-        self.font = None
-        self.init_ui()
-
+        self.mam    = MicrogliaAnalyzer(lambda x: print(x))
+        self.font   = QFont()
+        self.font.setFamily("Arial Unicode MS, Segoe UI Emoji, Apple Color Emoji, Noto Color Emoji")
+        warnings.simplefilter("ignore", FutureWarning)
         self.sources_folder = None
-        self.active_worker = False
-        self.n_images = 0
+        self.active_worker  = False
+        self.n_images       = 0
+        self.init_ui()
 
     # -------- UI: ----------------------------------
 
     def init_ui(self):
         self.layout = QVBoxLayout()
-        self.font = QFont()
-        self.font.setFamily("Arial Unicode MS, Segoe UI Emoji, Apple Color Emoji, Noto Color Emoji")
         self.media_control_panel()
         self.calibration_panel()
         self.segment_microglia_panel()
@@ -137,7 +135,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         h_layout.addWidget(self.minimal_area_label)
         self.minimal_area_input = QSpinBox()
         self.minimal_area_input.setRange(0, 1000000)
-        self.minimal_area_input.setValue(15)
+        self.minimal_area_input.setValue(5)
         self.minimal_area_input.valueChanged.connect(self.min_area_update)
         h_layout.addWidget(self.minimal_area_input)
         layout.addLayout(h_layout)
@@ -148,36 +146,17 @@ class MicrogliaAnalyzerWidget(QWidget):
         h_layout.addWidget(self.probability_threshold_label)
         self.probability_threshold_slider = QSlider(Qt.Horizontal)
         self.probability_threshold_slider.setRange(0, 100)
-        self.probability_threshold_slider.setValue(40)
+        self.probability_threshold_slider.setValue(20)
         self.probability_threshold_slider.setTickInterval(1)
         self.probability_threshold_slider.setTickPosition(QSlider.TicksBelow)
         self.probability_threshold_slider.valueChanged.connect(self.proba_threshold_update)
         h_layout.addWidget(self.probability_threshold_slider)
-        self.proba_value_label = QLabel("40%")
+        self.proba_value_label = QLabel("20%")
         h_layout.addWidget(self.proba_value_label)
         layout.addLayout(h_layout)
 
         self.segment_microglia_group.setLayout(layout)
         self.layout.addWidget(self.segment_microglia_group)
-
-    def reset_table(self):
-        classes = self.mam.classes
-        self.table.setRowCount(0)
-
-        items = []
-        if classes is not None:
-            items = [(QColor(BBOX_COLORS[i]), c) for i, c in classes.items()]
-            self.table.setRowCount(len(classes))
-
-        for row, (color, word) in enumerate(items):
-            color_item = QTableWidgetItem()
-            color_item.setBackground(color)
-            color_item.setFlags(Qt.ItemIsEnabled)
-            self.table.setItem(row, 0, color_item)
-
-            word_item = QTableWidgetItem(word)
-            word_item.setFlags(Qt.ItemIsEnabled)
-            self.table.setItem(row, 1, word_item)
 
     def classes_table_ui(self):
         self.table = QTableWidget(self)
@@ -201,21 +180,14 @@ class MicrogliaAnalyzerWidget(QWidget):
 
         # List of classes
         self.table = self.classes_table_ui()
-        self.reset_table()
+        self.reset_table_ui()
         layout.addWidget(self.table)
 
-        # Minimum score for classification
-        h_layout = QHBoxLayout()
-        self.minimal_score_label = QLabel("Min score:")
-        h_layout.addWidget(self.minimal_score_label)
-        self.minimal_score_slider = QSlider(Qt.Horizontal)
-        self.minimal_score_slider.setRange(0, 100)
-        self.minimal_score_slider.setValue(15)
-        h_layout.addWidget(self.minimal_score_slider)
-        self.min_score_label = QLabel("15%")
-        h_layout.addWidget(self.min_score_label)
-        self.minimal_score_slider.valueChanged.connect(self.min_score_update)
-        layout.addLayout(h_layout)
+        # "Show garbage" checkbox
+        self.show_garbage_box = QCheckBox("Show garbage")
+        self.show_garbage_box.setChecked(True)
+        self.show_garbage_box.stateChanged.connect(self.update_garbage_display)
+        layout.addWidget(self.show_garbage_box)
 
         self.classify_microglia_group.setLayout(layout)
         self.layout.addWidget(self.classify_microglia_group)
@@ -230,23 +202,35 @@ class MicrogliaAnalyzerWidget(QWidget):
         layout.addWidget(self.export_measures_button)
 
         self.run_batch_button = QPushButton("▶ Run batch")
-        # self.run_batch_button.setFont(self.font)
         self.run_batch_button.clicked.connect(self.batch_callback)
         layout.addWidget(self.run_batch_button)
 
         self.microglia_group.setLayout(layout)
         self.layout.addWidget(self.microglia_group)
+    
+    def set_active_ui(self, state, affect_batch=False):
+        self.clear_state_button.setEnabled(state)
+        self.select_sources_button.setEnabled(state)
+        self.images_combo.setEnabled(state)
+        self.calibration_input.setEnabled(state)
+        self.unit_selector.setEnabled(state)
+        self.calibrationButton.setEnabled(state)
+        self.segment_microglia_button.setEnabled(state)
+        self.minimal_area_input.setEnabled(state)
+        self.probability_threshold_slider.setEnabled(state)
+        self.classify_microglia_button.setEnabled(state)
+        self.export_measures_button.setEnabled(state)
+        self.show_garbage_box.setEnabled(state)
+        if not affect_batch:
+            self.run_batch_button.setEnabled(state)
 
     # -------- Callbacks: ----------------------------------
 
     def clear_state(self):
-        self.mam = MicrogliaAnalyzer()
+        self.mam = MicrogliaAnalyzer(lambda x: print(x))
         self.clear_viewer()
-        self.clear_gui_elements()
         self.clear_attributes()
-
-    def min_score_update(self):
-        self.min_score_label.setText(f"{self.minimal_score_slider.value()}%")
+        self.clear_gui_elements()
 
     def select_sources_folder(self):
         folder_path = QFileDialog.getExistingDirectory(self, "Select sources folder")
@@ -261,12 +245,13 @@ class MicrogliaAnalyzerWidget(QWidget):
             return
         self.open_image(full_path)
 
-    def proba_threshold_update(self):
-        self.proba_value_label.setText(f"{self.probability_threshold_slider.value()}%")
-        self.update_seg_pp()
-    
-    def min_area_update(self):
-        self.update_seg_pp()
+    def apply_calibration(self):
+        if self.calibration_input.text() == "":
+            return
+        length = float(self.calibration_input.text())
+        unit = self.unit_selector.currentText()
+        pixelSize, unit = self.convert_to_optimal_unit(length, unit)
+        self.set_calibration(pixelSize, unit)
 
     def segment_microglia(self):
         self.pbr = progress()
@@ -274,7 +259,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.set_active_ui(False)
         self.thread = QThread()
 
-        self.mam.set_cc_min_size(self.minimal_area_input.value())
+        self.mam.set_min_surface(self.minimal_area_input.value())
         self.mam.set_proba_threshold(self.probability_threshold_slider.value() / 100)
 
         self.worker = QtSegmentMicroglia(self.pbr, self.mam)
@@ -288,21 +273,37 @@ class MicrogliaAnalyzerWidget(QWidget):
         
         self.thread.start()
 
-    def update_seg_pp(self):
-        self.mam.set_cc_min_size(self.minimal_area_input.value())
-        self.mam.set_proba_threshold(self.probability_threshold_slider.value() / 100)
-        if _SEGMENTATION_LAYER_NAME not in self.viewer.layers:
+    def min_area_update(self):
+        self.update_seg_pp()
+
+    def proba_threshold_update(self):
+        self.proba_value_label.setText(f"{self.probability_threshold_slider.value()}%")
+        self.update_seg_pp()
+
+    def reset_table_ui(self):
+        classes = self.mam.class_names
+        if classes is None:
             return
-        self.mam.segmentation_postprocessing()
-        self.show_microglia()
+
+        self.table.setRowCount(0)
+        items = [(QColor(BBOX_COLORS[i][:7]), c) for i, c in enumerate(classes)]
+        self.table.setRowCount(len(classes))
+
+        for row, (color, word) in enumerate(items):
+            color_item = QTableWidgetItem()
+            color_item.setBackground(color)
+            color_item.setFlags(Qt.ItemIsEnabled)
+            self.table.setItem(row, 0, color_item)
+
+            word_item = QTableWidgetItem(word)
+            word_item.setFlags(Qt.ItemIsEnabled)
+            self.table.setItem(row, 1, word_item)
 
     def classify_microglia(self):
         self.pbr = progress()
         self.pbr.set_description("Classifying microglia...")
         self.set_active_ui(False)
         self.thread = QThread()
-
-        self.mam.set_min_score(self.minimal_score_slider.value() / 100)
 
         self.worker = QtClassifyMicroglia(self.pbr, self.mam)
         self.total = 0
@@ -314,6 +315,10 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.thread.started.connect(self.worker.run)
         
         self.thread.start()
+
+    def update_garbage_display(self):
+        self.show_microglia()
+        self.show_classification()
 
     def export_measures(self):
         self.pbr = progress()
@@ -345,141 +350,15 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.end_worker()
         self.end_batch()
 
-    def run_batch(self):
-        sources = get_all_tiff_files(self.sources_folder)
-        print("Found sources: ", sources)
-        self.n_images = len(sources)
-        self.pbr = progress()
-        self.pbr.set_description("Running on folder...")
-        self.run_batch_button.setText(f"■ Kill ({str(1).zfill(2)}/{str(self.n_images).zfill(2)})")
-        self.set_active_ui(False)
-        self.thread = QThread()
-
-        settings = {
-            'calibration': self.mam.calibration,
-            'cc_min_size': self.minimal_area_input.value(),
-            'proba_threshold': self.probability_threshold_slider.value() / 100,
-            'unet_path': os.path.dirname(self.mam.segmentation_model_path),
-            'yolo_path': os.path.dirname(os.path.dirname(self.mam.classification_model_path)),
-            'min_score': self.minimal_score_slider.value() / 100
-        }
-
-        self.worker = QtBatchRunners(self.pbr, self.sources_folder, settings)
-        self.worker.update.connect(self.update_pbr)
-        self.active_worker = True
-
-        self.worker.moveToThread(self.thread)
-        self.worker.finished.connect(self.end_batch)
-        self.thread.started.connect(self.worker.run)
-        
-        self.thread.start()
-
     # -------- Methods: ----------------------------------
-
-    def end_batch(self):
-        self.end_worker()
-        self.n_images = 0
-        self.run_batch_button.setText("▶ Run batch")
-        show_info("Batch completed.")
-
-    def write_measures(self):
-        self.end_worker()
-        measures = self.mam.as_tsv(self.images_combo.currentText())
-        skeleton = self.mam.skeleton
-        if _SKELETON_LAYER_NAME not in self.viewer.layers:
-            layer = self.viewer.add_image(skeleton, name=_SKELETON_LAYER_NAME, colormap='red', blending='additive')
-        else:
-            layer = self.viewer.layers[_SKELETON_LAYER_NAME]
-            layer.data = skeleton
-        if self.mam.calibration is not None:
-            self.set_calibration(*self.mam.calibration)
-        root_folder = os.path.join(self.sources_folder, "controls")
-        if not os.path.exists(root_folder):
-            os.makedirs(root_folder)
-        measures_path = os.path.join(root_folder, os.path.splitext(self.images_combo.currentText())[0] + "_measures.tsv")
-        control_path  = os.path.join(root_folder, os.path.splitext(self.images_combo.currentText())[0] + "_control.tif")
-        tifffile.imwrite(control_path, np.stack([self.mam.skeleton, self.mam.mask], axis=0))
-        with open(measures_path, 'w') as f:
-            f.write("\n".join(measures))
-        show_info(f"Microglia measured.")
-
-    def show_classification(self):
-        self.end_worker()
-        bindings = self.mam.bindings
-        self.reset_table()
-        # Showing bound classification
-        boxes, colors = boxes_as_napari_shapes(bindings.values())
-        layer = None
-        if _CLASSIFICATION_LAYER_NAME not in self.viewer.layers:
-            layer = self.viewer.add_shapes(boxes, name=_CLASSIFICATION_LAYER_NAME, edge_color=colors, face_color='#00000000', edge_width=4)
-        else:
-            layer = self.viewer.layers[_CLASSIFICATION_LAYER_NAME]
-            layer.data = boxes
-            layer.edge_colors = colors
-        # Showing raw classification
-        classification = self.mam.classifications
-        tps = [(c, None, b) for c, b in zip(classification['classes'], classification['boxes'])]
-        boxes, colors = boxes_as_napari_shapes(tps, True)
-        if _YOLO_LAYER_NAME not in self.viewer.layers:
-            layer = self.viewer.add_shapes(boxes, name=_YOLO_LAYER_NAME, edge_color=colors, face_color='#00000000', edge_width=4, visible=False)
-        else:
-            layer = self.viewer.layers[_YOLO_LAYER_NAME]
-            layer.data = boxes
-            layer.edge_colors = colors
-            layer.edge_width = 4
-        # Update calibration
-        if self.mam.calibration is not None:
-            self.set_calibration(*self.mam.calibration)
-        show_info(f"Microglia classified.")
-
-    def show_microglia(self):
-        self.end_worker()
-        labeled = self.mam.mask
-        show_info(f"Microglia segmented.")
-        if _SEGMENTATION_LAYER_NAME in self.viewer.layers:
-            layer = self.viewer.layers[_SEGMENTATION_LAYER_NAME]
-            layer.data = labeled
-        else:
-            layer = self.viewer.add_labels(labeled, name=_SEGMENTATION_LAYER_NAME)
-        if self.mam.calibration is not None:
-            self.set_calibration(*self.mam.calibration)
-        self.set_active_ui(True)
-
-    def set_active_ui(self, state):
-        self.clear_state_button.setEnabled(state)
-        self.select_sources_button.setEnabled(state)
-        self.images_combo.setEnabled(state)
-        self.calibration_input.setEnabled(state)
-        self.unit_selector.setEnabled(state)
-        self.calibrationButton.setEnabled(state)
-        self.segment_microglia_button.setEnabled(state)
-        self.minimal_area_input.setEnabled(state)
-        self.probability_threshold_slider.setEnabled(state)
-        self.classify_microglia_button.setEnabled(state)
-        self.export_measures_button.setEnabled(state)
-        # self.run_batch_button.setEnabled(state)
-        
-
-    def end_worker(self):
-        if self.active_worker:
-            self.active_worker = False
-            self.pbr.close()
-            self.thread.quit()
-            self.thread.wait()
-            self.thread.deleteLater()
-            self.set_active_ui(True)
-            self.total = -1
-            self.thread = None
-
-    def update_pbr(self, text, current, total):
-        self.pbr.set_description(text)
-        if (self.n_images > 0):
-            self.run_batch_button.setText(f"■ Kill ({str(current+1).zfill(2)}/{str(self.n_images).zfill(2)})")
 
     def clear_attributes(self):
         self.sources_folder = None
+        self.active_worker  = False
+        self.n_images       = 0
 
     def clear_viewer(self):
+        self.end_worker()
         self.viewer.layers.select_all()
         self.viewer.layers.remove_selected()
 
@@ -487,7 +366,17 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.images_combo.clear()
         self.images_combo.addItem("---")
         self.calibration_input.clear()
+        self.unit_selector.setCurrentIndex(0)
         self.pixel_size_label.setText("Pixel size: ---")
+        self.run_batch_button.setText("▶ Run batch")
+    
+    def reset_layers(self):
+        if _SEGMENTATION_LAYER_NAME in self.viewer.layers:
+            self.viewer.layers[_SEGMENTATION_LAYER_NAME].data = np.zeros_like(self.viewer.layers[_SEGMENTATION_LAYER_NAME].data)
+        if _CLASSIFICATION_LAYER_NAME in self.viewer.layers:
+            self.viewer.layers[_CLASSIFICATION_LAYER_NAME].data = []
+        if _SKELETON_LAYER_NAME in self.viewer.layers:
+            self.viewer.layers[_SKELETON_LAYER_NAME].data = np.zeros_like(self.viewer.layers[_SKELETON_LAYER_NAME].data)
 
     def set_sources_folder(self, folder_path):
         if (folder_path is None) or (folder_path == ""):
@@ -496,16 +385,6 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.sources_folder = folder_path
         self.images_combo.clear()
         self.images_combo.addItems(get_all_tiff_files(folder_path))
-    
-    def reset_layers(self):
-        if _SEGMENTATION_LAYER_NAME in self.viewer.layers:
-            self.viewer.layers[_SEGMENTATION_LAYER_NAME].data = np.zeros_like(self.viewer.layers[_SEGMENTATION_LAYER_NAME].data)
-        if _CLASSIFICATION_LAYER_NAME in self.viewer.layers:
-            self.viewer.layers[_CLASSIFICATION_LAYER_NAME].data = []
-        if _YOLO_LAYER_NAME in self.viewer.layers:
-            self.viewer.layers[_YOLO_LAYER_NAME].data = []
-        if _SKELETON_LAYER_NAME in self.viewer.layers:
-            self.viewer.layers[_SKELETON_LAYER_NAME].data = np.zeros_like(self.viewer.layers[_SKELETON_LAYER_NAME].data)
 
     def open_image(self, image_path):
         data = tifffile.imread(image_path)
@@ -519,7 +398,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.mam.set_input_image(data.copy())
         if self.mam.calibration is not None:
             self.set_calibration(*self.mam.calibration)
-        
+
     def convert_to_optimal_unit(self, size, unit):
         unit_factors = {
             'nm': 1e9,
@@ -536,12 +415,6 @@ class MicrogliaAnalyzerWidget(QWidget):
                 return converted_size, unit_name
         return size, unit
     
-    def apply_calibration(self):
-        length = float(self.calibration_input.text())
-        unit = self.unit_selector.currentText()
-        pixelSize, unit = self.convert_to_optimal_unit(length, unit)
-        self.set_calibration(pixelSize, unit)
-    
     def set_calibration(self, size, unit):
         self.calibration_input.setText(f"{size:.3f}")
         self.unit_selector.setCurrentText(unit)
@@ -551,3 +424,117 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.pixel_size_label.setText(f"Pixel size: {size:.3f} {unit}")
         self.viewer.scale_bar.visible = True
         self.mam.set_calibration(size, unit)
+
+    def update_seg_pp(self):
+        self.mam.set_min_surface(self.minimal_area_input.value())
+        self.mam.set_proba_threshold(self.probability_threshold_slider.value() / 100)
+        self.mam._segmentation_postprocessing()
+        self.mam._classification_postprocessing()
+        self.show_microglia()
+        self.show_classification()
+
+    def show_microglia(self):
+        self.end_worker()
+        labeled = self.mam.get_mask(self.show_garbage_box.isChecked())
+        if labeled is None:
+            return
+        if _SEGMENTATION_LAYER_NAME in self.viewer.layers:
+            layer = self.viewer.layers[_SEGMENTATION_LAYER_NAME]
+            layer.data = (labeled > 0).astype(np.uint8) * 255
+        else:
+            layer = self.viewer.add_labels((labeled > 0).astype(np.uint8) * 255, name=_SEGMENTATION_LAYER_NAME)
+            show_info(f"Microglia segmented.")
+        if self.mam.calibration is not None:
+            self.set_calibration(*self.mam.calibration)
+        self.set_active_ui(True)
+
+    def show_classification(self):
+        self.end_worker()
+        bindings = self.mam.bindings
+        if bindings is None:
+            return
+        boxes, colors = bindings_as_napari_shapes(bindings, -1 if self.show_garbage_box.isChecked() else 0)
+        self.reset_table_ui()
+        layer = None
+        if _CLASSIFICATION_LAYER_NAME not in self.viewer.layers:
+            layer = self.viewer.add_shapes(boxes, name=_CLASSIFICATION_LAYER_NAME, edge_color=colors, face_color='#00000000', edge_width=4)
+        else:
+            layer = self.viewer.layers[_CLASSIFICATION_LAYER_NAME]
+            layer.data = boxes
+            layer.edge_color = colors
+            layer.edge_width = 4
+        # Update calibration
+        if self.mam.calibration is not None:
+            self.set_calibration(*self.mam.calibration)
+        show_info(f"Microglia classified.")
+    
+    def write_measures(self):
+        self.end_worker()
+        measures = self.mam.as_tsv(self.images_combo.currentText())
+        skeleton = (self.mam.skeleton > 0).astype(np.uint8) * 2
+        if _SKELETON_LAYER_NAME not in self.viewer.layers:
+            layer = self.viewer.add_labels(skeleton, name=_SKELETON_LAYER_NAME)
+        else:
+            layer = self.viewer.layers[_SKELETON_LAYER_NAME]
+            layer.data = skeleton
+        if self.mam.calibration is not None:
+            self.set_calibration(*self.mam.calibration)
+        root_folder = os.path.join(self.sources_folder, "controls")
+        if not os.path.exists(root_folder):
+            os.makedirs(root_folder)
+        measures_path = os.path.join(root_folder, os.path.splitext(self.images_combo.currentText())[0] + "_measures.csv")
+        control_path  = os.path.join(root_folder, os.path.splitext(self.images_combo.currentText())[0] + "_control.tif")
+        tifffile.imwrite(control_path, np.stack([self.mam.skeleton, self.mam.mask], axis=0))
+        with open(measures_path, 'w') as f:
+            f.write("\n".join(measures))
+        show_info(f"Microglia measured.")
+
+    def run_batch(self):
+        sources = get_all_tiff_files(self.sources_folder)
+        print("Found sources: ", sources)
+        self.n_images = len(sources)
+        self.pbr = progress()
+        self.pbr.set_description("Running on folder...")
+        self.run_batch_button.setText(f"■ Kill ({str(1).zfill(2)}/{str(self.n_images).zfill(2)})")
+        self.set_active_ui(False, True)
+        self.thread = QThread()
+
+        settings = {
+            'calibration': self.mam.calibration,
+            'cc_min_size': self.minimal_area_input.value(),
+            'proba_threshold': self.probability_threshold_slider.value() / 100,
+            'unet_path': os.path.dirname(self.mam.segmentation_model_path),
+            'yolo_path': os.path.dirname(os.path.dirname(self.mam.classification_model_path))
+        }
+
+        self.worker = QtBatchRunners(self.pbr, self.sources_folder, settings)
+        self.worker.update.connect(self.update_pbr)
+        self.active_worker = True
+
+        self.worker.moveToThread(self.thread)
+        self.worker.finished.connect(self.end_batch)
+        self.thread.started.connect(self.worker.run)
+        
+        self.thread.start()
+    
+    def end_batch(self):
+        self.end_worker()
+        self.n_images = 0
+        self.run_batch_button.setText("▶ Run batch")
+        show_info("=== 🎉 Batch completed. ===")
+    
+    def end_worker(self):
+        if self.active_worker:
+            self.active_worker = False
+            self.pbr.close()
+            self.thread.quit()
+            self.thread.wait()
+            self.thread.deleteLater()
+            self.set_active_ui(True, False)
+            self.total = -1
+            self.thread = None
+
+    def update_pbr(self, text, current, total):
+        self.pbr.set_description(text)
+        if (self.n_images > 0):
+            self.run_batch_button.setText(f"■ Kill ({str(current+1).zfill(2)}/{str(self.n_images).zfill(2)})")

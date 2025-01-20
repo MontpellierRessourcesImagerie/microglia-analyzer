@@ -49,9 +49,9 @@ class QtSegmentMicroglia(QObject):
     def run(self):
         self._fetch_descriptor()
         self._check_updates()
+        self.mga._log(f"Segmenting microglia using the version {self.versions['µnet']['version']}")
         self.mga.set_segmentation_model(self.model_path)
-        self.mga.segmentation_inference()
-        self.mga.segmentation_postprocessing()
+        self.mga.segment_microglia()
         self.finished.emit()
 
 
@@ -95,10 +95,9 @@ class QtClassifyMicroglia(QObject):
     def run(self):
         self._fetch_descriptor()
         self._check_updates()
+        self.mga._log(f"Classifying microglia using the version {self.versions['µyolo']['version']}")
         self.mga.set_classification_model(self.model_path)
-        self.mga.classification_inference()
-        self.mga.classification_postprocessing()
-        self.mga.bind_classifications()
+        self.mga.classify_microglia()
         self.finished.emit()
 
 class QtMeasureMicroglia(QObject):
@@ -112,7 +111,7 @@ class QtMeasureMicroglia(QObject):
         self.mga = mga
 
     def run(self):
-        self.mga.analyze_as_graph()
+        self.mga.analyze_graph()
         self.finished.emit()
 
 class QtBatchRunners(QObject):
@@ -144,29 +143,27 @@ class QtBatchRunners(QObject):
         ma.set_calibration(*s['calibration'])
         ma.set_segmentation_model(s['unet_path'])
         ma.set_classification_model(s['yolo_path'])
-        ma.set_cc_min_size(s['cc_min_size'])
+        ma.set_min_surface(s['cc_min_size'])
         ma.set_proba_threshold(s['proba_threshold'])
-        ma.segmentation_inference()
-        ma.segmentation_postprocessing()
-        ma.set_min_score(s['min_score'])
-        ma.classification_inference()
-        ma.classification_postprocessing()
-        ma.bind_classifications()
-        ma.analyze_as_graph()
+        ma.segment_microglia()
+        ma.classify_microglia()
+        ma.analyze_graph()
         tsv = ma.as_tsv(self.images_pool[index])
         if index == 0:
             self.tsv_lines += tsv
         else:
             self.tsv_lines += tsv[1:]
-        classified = np.zeros_like(ma.mask)
-        for (cls, _, seg_bbox) in ma.bindings.values():
+        classified = np.zeros(ma.mask.shape, dtype=np.uint8)
+        for (cls, seg_bbox) in ma.bindings:
             classified[seg_bbox[0]:seg_bbox[2], seg_bbox[1]:seg_bbox[3]] = int(cls)
         mask = (ma.mask > 0).astype(np.uint8) * classified
         control_path = os.path.join(self.source_dir, "controls", self.images_pool[index])
+        tifffile.imwrite("/tmp/mask.tif", mask)
+        tifffile.imwrite("/tmp/skeleton.tif", ma.skeleton)
         tifffile.imwrite(control_path, np.stack([ma.skeleton, mask], axis=0))
     
     def write_tsv(self):
-        with open(os.path.join(self.source_dir, "controls", "results.tsv"), 'w') as f:
+        with open(os.path.join(self.source_dir, "controls", "results.csv"), 'w') as f:
             f.write("\n".join(self.tsv_lines))
 
     def run(self):

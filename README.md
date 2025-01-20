@@ -6,19 +6,21 @@
 
 # What is it?
 
-A Napari plugin that allows for the segmentation and detection of microglia on fluorescent images.
+A Napari plugin that allows for the segmentation and detection of microglia on 2D fluorescent images.
+Z-stacks are not handled.
 
 It consists in:
 - Segmenting the microglia with a UNet2D model.
 - Create classified bounding-boxes with a YOLOv5.
 - Using some morphology to extract metrics such as:
-    - The total length
-    - The length of the longest path
-    - The number of leaves
-    - The number of vertices
-    - Area of the convex hull
-    - Solidity/extent
-- We end-up with a TSV file containing all these metrics.
+    - The number of branches.
+    - The number of leaves (== end points).
+    - The number of vertices (== internal crossings).
+    - The mean branch length.
+    - The total length.
+    - The length of the longest path.
+    
+- We end-up with a ".csv" (separated with tabulations instead of commas) file containing all these metrics.
 
 # 01. How to install/upgrade it?
 

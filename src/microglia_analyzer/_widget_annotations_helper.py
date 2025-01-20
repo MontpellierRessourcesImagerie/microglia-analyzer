@@ -299,6 +299,8 @@ class AnnotationsWidget(QWidget):
         self.count_boxes()
         if os.path.isfile(masks_path):
             self.restore_mask_layer(masks_path)
+        else:
+            print(f"No mask found ({masks_path}).")
     
     def restore_mask_layer(self, masks_path):
         data = tifffile.imread(masks_path)

@@ -6,6 +6,9 @@ import re
 from cv2 import imread
 # from tifffile import imread
 from yolov5 import train
+import warnings
+
+warnings.simplefilter("ignore", FutureWarning)
 
 """
 
@@ -62,17 +65,17 @@ reset_local_data  = True
 
 #@markdown ## 📍 b. Network architecture
 
-validation_percentage = 0.15
-batch_size            = 24
+validation_percentage = 0.1
+batch_size            = 16
 epochs                = 1800
 classes_names         = ["garbage", "amoeboid", "rod", "intermediate", "homeostatic"]
 optimizer             = 'AdamW'
 learning_rate         = 0.0001
 deterministic         = True
-cos_lr                = False
-label_smoothing       = 0.0
-overlap_mask          = True
-dropout               = 0.5
+cos_lr                = True
+label_smoothing       = 0.1
+overlap_mask          = False
+dropout               = 0.25
 
 # optimizer: 'SGD', 'Adam', 'AdamW'.
 # deterministic: True, False
