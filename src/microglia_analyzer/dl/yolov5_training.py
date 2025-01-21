@@ -54,7 +54,7 @@ Before starting using this script, please make sure that:
 
 #@markdown ## 📍 a. Data paths
 
-data_folder       = "/home/benedetti/Documents/projects/2060-microglia/data/training-data/clean-v002"
+data_folder       = "/home/benedetti/Documents/projects/2060-microglia/data/training-data/yolo-pool"
 qc_folder         = None
 inputs_name       = "images"
 annotations_name  = "labels"
@@ -73,9 +73,10 @@ optimizer             = 'AdamW'
 learning_rate         = 0.0001
 deterministic         = True
 cos_lr                = True
-label_smoothing       = 0.1
+label_smoothing       = 0.0
 overlap_mask          = False
 dropout               = 0.25
+
 
 # optimizer: 'SGD', 'Adam', 'AdamW'.
 # deterministic: True, False
@@ -468,7 +469,9 @@ def main():
     train.run(
         data=os.path.join(working_directory, "data.yml"),
         epochs=epochs,
+        cfg="/home/benedetti/Desktop/pour-test-2060/yolov5/models/yolov5m.yaml",
         batch_size=batch_size,
+        hyp="/home/benedetti/Documents/projects/2060-microglia/µyolo/models/hyp.yaml",
         project=models_path,
         name=version_name,
         imgsz=get_image_size(),
@@ -480,12 +483,6 @@ def main():
         dropout=dropout,
         lr0=learning_rate
     )
-    # optimizer: 'SGD', 'Adam', 'AdamW', 'NAdam', 'RAdam', 'RMSProp'.
-    # deterministic: True, False
-    # cos_lr: True, False
-    # label_smoothing: 0.0, 0.1, 0.2, 0.3, 0.4, 0.5
-    # overlap_mask: True, False
-    # dropout: 0.0, 0.1, 0.2, 0.3, 0.4, 0.5
 
 
 if __name__ == "__main__":

@@ -233,25 +233,19 @@ class ImageTiler2D(object):
 
 if __name__ == "__main__":
     import tifffile
+    import os
     from microglia_analyzer.experimental.tiles import generate_checkerboard
 
-    # checkerboard_img = np.squeeze(np.array(generate_checkerboard(2048, 2048, 16, 16)))
-    checkerboard_img = np.ones((2048, 2048), np.float32)
-    tifffile.imwrite("/tmp/exp/01-original.tif", checkerboard_img)
+    input_path  = "/home/benedetti/Desktop/transfer_8984341_files_8a9cb3a6/"
+    output_path = "/home/benedetti/Desktop/transfer_8984341_files_8a9cb3a6/tiled/"
+    imgs_pool   = [i for i in os.listdir(input_path) if i.endswith(".tif")]
 
-    tiles_manager = ImageTiler2D(512, 128, checkerboard_img.shape)
-    tiles = tiles_manager.image_to_tiles(checkerboard_img)
-    tifffile.imwrite("/tmp/exp/02-tiles.tif", tiles)
+    for img_name in imgs_pool:
+        img_path = os.path.join(input_path, img_name)
+        img_data = tifffile.imread(img_path)
+        img_data = normalize(img_data, 0, 255, np.uint8)
 
-    merged = tiles_manager.tiles_to_image(tiles)
-    tifffile.imwrite("/tmp/exp/03-merged.tif", merged)
-
-    tifffile.imwrite("/tmp/exp/04-coefs.tif", tiles_manager.blending_coefs)
-
-    tifffile.imwrite(
-        "/tmp/exp/05-gradient.tif", 
-        tiles_manager.tiles_to_image(tiles_manager.blending_coefs)
-    )
-
-    for p in tiles_manager.layout:
-        print(p)
+        tiles_manager = ImageTiler2D(512, 128, img_data.shape)
+        tiles = tiles_manager.image_to_tiles(img_data, False)
+        for i, t in enumerate(tiles):
+            tifffile.imwrite(os.path.join(output_path, f"{img_name[:-4]}_{str(i).zfill(2)}.tif"), t)

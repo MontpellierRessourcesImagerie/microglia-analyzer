@@ -11,7 +11,7 @@ _BOX_COLORS = [
     (255,   0,   0), 
     (  0, 255,   0), 
     (  0,   0, 255), 
-    (255, 255,   0), 
+    (  0, 255, 255), 
     (255,   0, 255), 
     (  0, 255, 255),
     (255, 255, 255)
@@ -219,7 +219,7 @@ class MicrogliaClassifier(object):
 
 # -----------------------------------------------------------------
 
-def draw_bounding_boxes(image, predictions, classes, exclude_class=-1, thickness=2):
+def draw_bounding_boxes(image, predictions, classes, exclude_class=0, thickness=2):
     """
     Dessine les bounding boxes sur une image en excluant une classe spécifique.
 
@@ -249,7 +249,7 @@ def draw_bounding_boxes(image, predictions, classes, exclude_class=-1, thickness
 
 
 def main():
-    indices = [77]
+    indices = [98,99]
     for i in indices:
         print("####   VERSION: ", i, "   ####")
         mc = MicrogliaClassifier(
