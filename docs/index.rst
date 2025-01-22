@@ -8,12 +8,4 @@ Microglia Analyzer
    user_guide
    segmentation
    classification
-   modules
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   measures

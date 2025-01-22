@@ -56,7 +56,10 @@ testing = [
     "tifffile",
     "torch",
     "tensorflow==2.16.1",
-    "skan"
+    "skan",
+    "sphinx_rtd_theme",
+    "myst_parser",
+    "sphinx_tabs"
 ]
 
 [project.entry-points."napari.manifest"]
