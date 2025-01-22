@@ -72,7 +72,7 @@ classes_names         = ["garbage", "amoeboid", "rod", "intermediate", "homeosta
 optimizer             = 'AdamW'
 learning_rate         = 0.0001
 deterministic         = True
-cos_lr                = True
+cos_lr                = False
 label_smoothing       = 0.0
 overlap_mask          = False
 dropout               = 0.25
@@ -469,9 +469,10 @@ def main():
     train.run(
         data=os.path.join(working_directory, "data.yml"),
         epochs=epochs,
+        weigths="/home/benedetti/Desktop/pour-test-2060/yolov5m.pt",
         cfg="/home/benedetti/Desktop/pour-test-2060/yolov5/models/yolov5m.yaml",
         batch_size=batch_size,
-        hyp="/home/benedetti/Documents/projects/2060-microglia/µyolo/models/hyp.yaml",
+        hyp="/home/benedetti/Documents/projects/2060-microglia/µyolo/µyolo-V100/hyp.yaml",
         project=models_path,
         name=version_name,
         imgsz=get_image_size(),
@@ -480,9 +481,11 @@ def main():
         cos_lr=cos_lr,
         label_smoothing=label_smoothing,
         overlap_mask=overlap_mask,
-        dropout=dropout,
-        lr0=learning_rate
+        dropout=dropout
     )
+    # Write version in "version.txt"
+    with open(os.path.join(models_path, version_name, "version.txt"), 'w') as f:
+        f.write(str(v))
 
 
 if __name__ == "__main__":

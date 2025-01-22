@@ -1,5 +1,12 @@
 # Change Log
 
+## Version 1.1.5 (21 Jan. 2025)
+
+- New YOLO version with a bigger model (`YOLOv5m` instead of `YOLOv5s`)
+- The new training now locks the scale and the intensity shifts in the data augmentation.
+- The index of the model's version is now written on the button.
+- In developer's mode, it is now possible to **Shift+Click** on buttons to select local models (no downloading).
+
 ## Version 1.1.4 (19 Jan. 2025)
 
 - Images normalization is now performed globally instead of locally to reduce the number of false positives.

@@ -47,10 +47,11 @@ class QtSegmentMicroglia(QObject):
         self.model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "µnet")
 
     def run(self):
-        self._fetch_descriptor()
-        self._check_updates()
-        self.mga._log(f"Segmenting microglia using the version {self.versions['µnet']['version']}")
-        self.mga.set_segmentation_model(self.model_path)
+        if self.mga.segmentation_model is None:
+            self._fetch_descriptor()
+            self._check_updates()
+            self.mga._log(f"Segmenting microglia using the version {self.versions['µnet']['version']}")
+            self.mga.set_segmentation_model(self.model_path)
         self.mga.segment_microglia()
         self.finished.emit()
 
@@ -93,10 +94,11 @@ class QtClassifyMicroglia(QObject):
         self.model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "µyolo")
 
     def run(self):
-        self._fetch_descriptor()
-        self._check_updates()
-        self.mga._log(f"Classifying microglia using the version {self.versions['µyolo']['version']}")
-        self.mga.set_classification_model(self.model_path)
+        if self.mga.classification_model is None:
+            self._fetch_descriptor()
+            self._check_updates()
+            self.mga._log(f"Classifying microglia using the version {self.versions['µyolo']['version']}")
+            self.mga.set_classification_model(self.model_path)
         self.mga.classify_microglia()
         self.finished.emit()
 
@@ -158,8 +160,6 @@ class QtBatchRunners(QObject):
             classified[seg_bbox[0]:seg_bbox[2], seg_bbox[1]:seg_bbox[3]] = int(cls)
         mask = (ma.mask > 0).astype(np.uint8) * classified
         control_path = os.path.join(self.source_dir, "controls", self.images_pool[index])
-        tifffile.imwrite("/tmp/mask.tif", mask)
-        tifffile.imwrite("/tmp/skeleton.tif", ma.skeleton)
         tifffile.imwrite(control_path, np.stack([ma.skeleton, mask], axis=0))
     
     def write_tsv(self):

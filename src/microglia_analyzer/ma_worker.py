@@ -1,7 +1,7 @@
 import os
 import shutil
 import pint
-import json
+import re
 import pathlib
 import platform
 
@@ -311,6 +311,28 @@ class MicrogliaAnalyzer(object):
             coef = counts[target_lbl] * score
             votes[target_lbl, cls] += coef
         self._bind_classifications(votes)
+
+    def get_segmentation_version(self):
+        if self.segmentation_model_path is None:
+            return None
+        parent_folder = os.path.dirname(self.segmentation_model_path)
+        version_file = os.path.join(parent_folder, "version.txt")
+        if not os.path.isfile(version_file):
+            return None
+        with open(version_file, "r") as f:
+            version = f.read().strip()
+        return version
+    
+    def get_classification_version(self):
+        if self.classification_model_path is None:
+            return None
+        parent_folder = os.path.dirname(os.path.dirname(self.classification_model_path))
+        version_file = os.path.join(parent_folder, "version.txt")
+        if not os.path.isfile(version_file):
+            return None
+        with open(version_file, "r") as f:
+            version = f.read().strip()
+        return version
 
     def classify_microglia(self):
         self._classification_inference()

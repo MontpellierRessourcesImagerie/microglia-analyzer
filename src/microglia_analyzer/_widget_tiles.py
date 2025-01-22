@@ -1,12 +1,11 @@
-from qtpy.QtWidgets import (QWidget, QVBoxLayout, QGroupBox, 
+from qtpy.QtWidgets import (QWidget, QVBoxLayout, QGroupBox, QButtonGroup,
                             QSpinBox, QHBoxLayout, QPushButton, 
-                            QFileDialog, QComboBox, QLabel,
+                            QFileDialog, QComboBox, QLabel, QRadioButton,
                             QCheckBox, QSpinBox, QSlider, QLineEdit)
 
-from qtpy.QtCore import QThread, Qt
+from qtpy.QtCore import Qt
 
 from PyQt5.QtGui import QFont, QDoubleValidator
-from PyQt5.QtCore import pyqtSignal
 
 import napari
 from napari.utils.notifications import show_info
@@ -19,7 +18,6 @@ import os
 import re
 import random
 import cv2
-import shutil
 
 from microglia_analyzer import TIFF_REGEX
 from microglia_analyzer.tiles.tiler import ImageTiler2D
@@ -34,6 +32,30 @@ _PREVIEW_IMAGE_LAYER = "Whole-image"
 _PREVIEW_SHAPE_LAYER = "Tile-box-"
 _FOLDER_MOSAIC_LAYER = "Folder-mosaic"
 
+
+_NORM_STYLE = """
+        QRadioButton {
+            border: solid 1px rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            padding: 5px;
+            background-color: rgba(255, 255, 255, 0);
+            color: rgba(255, 255, 255, 0.9);
+            /*font-size: 16px;*/
+            width: 30%;
+        }
+        QRadioButton::indicator {
+            width: 0px;  /* Supprime la pastille */
+            height: 0px;
+        }
+        QRadioButton:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        QRadioButton:checked {
+            background-color: #0078D7;
+            color: white;
+            font-weight: bold;
+        }
+        """
 
 class TilesCreatorWidget(QWidget):
     
@@ -157,9 +179,27 @@ class TilesCreatorWidget(QWidget):
         self.normalization_group = QGroupBox("Normalization")
         layout = QVBoxLayout()
 
-        # Use normalization checkbox
-        self.use_normalization = QCheckBox("Use normalization")
-        layout.addWidget(self.use_normalization)
+        # Use normalization radio buttons
+        no_norm_button = QRadioButton("---")
+        local_norm_button = QRadioButton("Local")
+        global_norm_button = QRadioButton("Global")
+
+        no_norm_button.setStyleSheet(_NORM_STYLE)
+        local_norm_button.setStyleSheet(_NORM_STYLE)
+        global_norm_button.setStyleSheet(_NORM_STYLE)
+        global_norm_button.setChecked(True)
+
+        self.norm_group = QButtonGroup()
+        self.norm_group.addButton(no_norm_button)
+        self.norm_group.addButton(local_norm_button)
+        self.norm_group.addButton(global_norm_button)
+
+        r_layout = QHBoxLayout()
+        r_layout.addWidget(no_norm_button)
+        r_layout.addWidget(local_norm_button)
+        r_layout.addWidget(global_norm_button)
+
+        layout.addLayout(r_layout)
 
         # Lower bound input float
         h_layout = QHBoxLayout()
@@ -185,9 +225,23 @@ class TilesCreatorWidget(QWidget):
         h_layout.addWidget(self.upper_bound_input)
         layout.addLayout(h_layout)
 
-        # Init checkbox state
-        self.use_normalization.stateChanged.connect(self.update_normalization)
-        self.use_normalization.setChecked(True)
+        # Output type
+        h_layout = QHBoxLayout()
+        self.out_type_label = QLabel("Output type:")
+        self.type_dropdown = QComboBox()
+        self.type_dropdown.addItems(["float32", "uint8", "uint16"])
+        h_layout.addWidget(self.out_type_label)
+        h_layout.addWidget(self.type_dropdown)
+        layout.addLayout(h_layout)
+
+        # Output file format
+        h_layout = QHBoxLayout()
+        self.format_label = QLabel("Output format:")
+        self.format_dropdown = QComboBox()
+        self.format_dropdown.addItems([".tif", ".png", ".jpg"])
+        h_layout.addWidget(self.format_label)
+        h_layout.addWidget(self.format_dropdown)
+        layout.addLayout(h_layout)
 
         self.normalization_group.setLayout(layout)
         self.layout.addWidget(self.normalization_group)

@@ -6,9 +6,8 @@ Microglia Analyzer
    :caption: Contents:
    
    user_guide
-   make_patches
-   annotate_patches
-   analyze_microglia
+   segmentation
+   classification
    modules
 
 

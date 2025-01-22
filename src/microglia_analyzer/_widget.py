@@ -1,12 +1,13 @@
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QGroupBox, QTableWidget, 
                             QSpinBox, QHBoxLayout, QPushButton, QHeaderView,
                             QFileDialog, QComboBox, QLabel, QTableWidgetItem,
-                            QSlider, QSpinBox, QFrame, QLineEdit, QCheckBox)
+                            QSlider, QSpinBox, QFrame, QLineEdit, QCheckBox, QApplication)
 
 from qtpy.QtCore import QThread, Qt
 
+
 from PyQt5.QtGui import QFont, QDoubleValidator, QColor
-from PyQt5.QtCore import pyqtSignal, Qt, QLocale
+from PyQt5.QtCore import Qt, QLocale
 
 import napari
 from napari.utils.notifications import show_info
@@ -27,6 +28,7 @@ _IMAGE_LAYER_NAME          = "µ-Image"
 _SEGMENTATION_LAYER_NAME   = "µ-Segmentation"
 _CLASSIFICATION_LAYER_NAME = "µ-Classification"
 _SKELETON_LAYER_NAME       = "µ-Skeleton"
+_RELEASE                   = False
 
 class MicrogliaAnalyzerWidget(QWidget):
     
@@ -125,7 +127,7 @@ class MicrogliaAnalyzerWidget(QWidget):
 
         # Segmentation button
         self.segment_microglia_button = QPushButton("🔍 Segment")
-        self.segment_microglia_button.setFont(self.font)
+        # self.segment_microglia_button.setFont(self.font)
         self.segment_microglia_button.clicked.connect(self.segment_microglia)
         layout.addWidget(self.segment_microglia_button)
 
@@ -174,7 +176,7 @@ class MicrogliaAnalyzerWidget(QWidget):
 
         # Classification button
         self.classify_microglia_button = QPushButton("🧠 Classify")
-        self.classify_microglia_button.setFont(self.font)
+        # self.classify_microglia_button.setFont(self.font)
         self.classify_microglia_button.clicked.connect(self.classify_microglia)
         layout.addWidget(self.classify_microglia_button)
 
@@ -253,7 +255,27 @@ class MicrogliaAnalyzerWidget(QWidget):
         pixelSize, unit = self.convert_to_optimal_unit(length, unit)
         self.set_calibration(pixelSize, unit)
 
+    def ask_for_model_folder_popup(self, category):
+        if _RELEASE:
+            return
+        model_path = QFileDialog.getExistingDirectory(self, f"Select {category} model folder")
+        if not os.path.isdir(model_path):
+            print("No model selected (invalid path).")
+            return
+        if category == "segmentation":
+            self.mam.set_segmentation_model(model_path)
+            print("Local segmentation model used")
+        elif category == "classification":
+            self.mam.set_classification_model(model_path)
+            print("Local classification model used")
+        else:
+            print("No model selected (invalid category).")
+
     def segment_microglia(self):
+        modifiers = QApplication.keyboardModifiers()
+        if modifiers == Qt.ShiftModifier:
+            self.ask_for_model_folder_popup("segmentation")
+
         self.pbr = progress()
         self.pbr.set_description("Segmenting microglia...")
         self.set_active_ui(False)
@@ -300,6 +322,10 @@ class MicrogliaAnalyzerWidget(QWidget):
             self.table.setItem(row, 1, word_item)
 
     def classify_microglia(self):
+        modifiers = QApplication.keyboardModifiers()
+        if modifiers == Qt.ShiftModifier:
+            self.ask_for_model_folder_popup("classification")
+
         self.pbr = progress()
         self.pbr.set_description("Classifying microglia...")
         self.set_active_ui(False)
@@ -446,6 +472,9 @@ class MicrogliaAnalyzerWidget(QWidget):
             show_info(f"Microglia segmented.")
         if self.mam.calibration is not None:
             self.set_calibration(*self.mam.calibration)
+        v = self.mam.get_segmentation_version()
+        if v is not None:
+            self.segment_microglia_button.setText(f"🔍 Segment · (V{v})")
         self.set_active_ui(True)
 
     def show_classification(self):
@@ -466,6 +495,10 @@ class MicrogliaAnalyzerWidget(QWidget):
         # Update calibration
         if self.mam.calibration is not None:
             self.set_calibration(*self.mam.calibration)
+        self.show_microglia()
+        v = self.mam.get_classification_version()
+        if v is not None:
+            self.classify_microglia_button.setText(f"🧠 Classify · (V{v})")
         show_info(f"Microglia classified.")
     
     def write_measures(self):
