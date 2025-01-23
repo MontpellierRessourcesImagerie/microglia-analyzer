@@ -1,7 +1,7 @@
 import os
 import shutil
 import pint
-import re
+import json
 import pathlib
 import platform
 
@@ -15,6 +15,7 @@ from skan import Skeleton, summarize
 from microglia_analyzer.tiles.tiler import normalize
 from microglia_analyzer.utils import calculate_iou, normalize_batch
 from microglia_analyzer.tiles.tiler import ImageTiler2D
+from microglia_analyzer import __version__
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']  = '3'
 
@@ -70,6 +71,19 @@ class MicrogliaAnalyzer(object):
         self.graph_metrics = None
         # Skeleton of the segmentation.
         self.skeleton = None
+
+    def __str__(self):
+        settings = {
+            "Image shape"           : self.image.shape if (self.image is not None) else None,
+            "Calibration"           : self.calibration,
+            "Segmentation model"    : self.get_segmentation_version() if self.segmentation_model_path is not None else None,
+            "Classification model"  : self.get_classification_version() if self.classification_model_path is not None else None,
+            "Probability threshold" : self.segmentation_threshold,
+            "Minimal surface"       : self.min_surface,
+            "Class names"           : self.class_names,
+            "Software version"      : __version__
+        }
+        return json.dumps(settings, indent=4)
 
     def _log(self, message):
         if self.logging:
@@ -267,6 +281,8 @@ class MicrogliaAnalyzer(object):
         return (clean_mask > 0).astype(np.uint8) * 255
 
     def _classification_inference(self):
+        if len(np.unique(self.mask)) == 1:
+            return
         self.reset_classification()
         yolo_input = normalize(self.image, 0, 255, np.uint8)
         tiles_manager = ImageTiler2D(_YOLO_TILE, _YOLO_OVERLAP, self.image.shape)
@@ -397,6 +413,32 @@ class MicrogliaAnalyzer(object):
             buffer.append(line)
 
         return buffer
+    
+    def bindings_to_yolo(self):
+        if self.bindings is None:
+            return None
+        img_height, img_width = self.image.shape
+        yolo_bboxes = []
+        for cls, (y1, x1, y2, x2) in self.bindings:
+            x = ((x1 + x2) / 2) / img_width
+            y = ((y1 + y2) / 2) / img_height
+            width  = (x2 - x1) / img_width
+            height = (y2 - y1) / img_height
+            yolo_bboxes.append((cls, x, y, width, height))
+        return yolo_bboxes
+    
+    def bindings_from_yolo(self, yolo_bboxes_str):
+        lines = [line.strip() for line in yolo_bboxes_str.split('\n') if line.strip()]
+        img_height, img_width = self.image.shape
+        bindings = []
+        for line in lines:
+            cls, x, y, width, height = map(float, line.strip('()').split(','))
+            x1 = int((x - width / 2) * img_width)
+            x2 = int((x + width / 2) * img_width)
+            y1 = int((y - height / 2) * img_height)
+            y2 = int((y + height / 2) * img_height)
+            bindings.append((int(cls), (y1, x1, y2, x2)))
+        self.bindings = bindings
 
 
 if __name__ == "__main__":

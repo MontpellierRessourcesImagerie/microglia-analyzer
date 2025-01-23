@@ -6,3 +6,9 @@ You can retrain the model if you have some annotated data using the provided fil
 
 1. Get your data ready
 ======================
+
+2. Data augmentation
+====================
+
+3. Filaments extraction
+=======================

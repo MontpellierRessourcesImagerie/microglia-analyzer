@@ -10,15 +10,16 @@ from PyQt5.QtGui import QFont, QDoubleValidator, QColor
 from PyQt5.QtCore import Qt, QLocale
 
 import napari
-from napari.utils.notifications import show_info
+from napari.utils.notifications import show_info, show_warning
 from napari.utils import progress
 
 import tifffile
 import numpy as np
 import os
+import json
 import warnings
 
-from microglia_analyzer import TIFF_REGEX
+from microglia_analyzer import TIFF_REGEX, __version__
 from microglia_analyzer.utils import get_all_tiff_files, bindings_as_napari_shapes, BBOX_COLORS
 from microglia_analyzer.ma_worker import MicrogliaAnalyzer
 from microglia_analyzer.qt_workers import (QtSegmentMicroglia, QtClassifyMicroglia,
@@ -424,6 +425,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.mam.set_input_image(data.copy())
         if self.mam.calibration is not None:
             self.set_calibration(*self.mam.calibration)
+        self.attempt_restore()
 
     def convert_to_optimal_unit(self, size, unit):
         unit_factors = {
@@ -501,9 +503,7 @@ class MicrogliaAnalyzerWidget(QWidget):
             self.classify_microglia_button.setText(f"🧠 Classify · (V{v})")
         show_info(f"Microglia classified.")
     
-    def write_measures(self):
-        self.end_worker()
-        measures = self.mam.as_tsv(self.images_combo.currentText())
+    def show_skeleton(self):
         skeleton = (self.mam.skeleton > 0).astype(np.uint8) * 2
         if _SKELETON_LAYER_NAME not in self.viewer.layers:
             layer = self.viewer.add_labels(skeleton, name=_SKELETON_LAYER_NAME)
@@ -512,14 +512,49 @@ class MicrogliaAnalyzerWidget(QWidget):
             layer.data = skeleton
         if self.mam.calibration is not None:
             self.set_calibration(*self.mam.calibration)
-        root_folder = os.path.join(self.sources_folder, "controls")
-        if not os.path.exists(root_folder):
-            os.makedirs(root_folder)
-        measures_path = os.path.join(root_folder, os.path.splitext(self.images_combo.currentText())[0] + "_measures.csv")
-        control_path  = os.path.join(root_folder, os.path.splitext(self.images_combo.currentText())[0] + "_control.tif")
-        tifffile.imwrite(control_path, np.stack([self.mam.skeleton, self.mam.mask], axis=0))
-        with open(measures_path, 'w') as f:
+
+    def write_csv(self, controls_folder):
+        measures_path = os.path.join(controls_folder, "results")
+        measure_path  = os.path.join(measures_path, os.path.splitext(self.images_combo.currentText())[0]+".csv")
+        os.makedirs(measures_path, exist_ok=True)
+        measures = self.mam.as_tsv(self.images_combo.currentText())
+        with open(measure_path, 'w') as f:
             f.write("\n".join(measures))
+
+    def write_mask(self, controls_folder):
+        masks_path = os.path.join(controls_folder, "masks")
+        mask_path  = os.path.join(masks_path, self.images_combo.currentText())
+        os.makedirs(masks_path, exist_ok=True)
+        tifffile.imwrite(mask_path, self.mam.get_mask(True))
+
+    def write_skeleton(self, controls_folder):
+        skeletons_path = os.path.join(controls_folder, "skeletons")
+        skeleton_path  = os.path.join(skeletons_path, self.images_combo.currentText())
+        os.makedirs(skeletons_path, exist_ok=True)
+        tifffile.imwrite(skeleton_path, self.mam.skeleton)
+
+    def write_classification(self, controls_folder):
+        classifications_path = os.path.join(controls_folder, "classifications")
+        classification_path  = os.path.join(classifications_path, os.path.splitext(self.images_combo.currentText())[0]+".txt")
+        os.makedirs(classifications_path, exist_ok=True)
+        with open(classification_path, 'w') as f:
+            f.write("\n".join([str(b) for b in self.mam.bindings_to_yolo()]))
+
+    def write_settings(self, controls_folder):
+        settings_path = os.path.join(controls_folder, "settings.txt")
+        with open(settings_path, 'w') as f:
+            f.write(str(self.mam))
+
+    def write_measures(self):
+        self.end_worker()
+        self.show_skeleton()
+        controls_folder = os.path.join(self.sources_folder, "controls")
+        os.makedirs(controls_folder, exist_ok=True)
+        self.write_csv(controls_folder)
+        self.write_mask(controls_folder)
+        self.write_skeleton(controls_folder)
+        self.write_classification(controls_folder)
+        self.write_settings(controls_folder)
         show_info(f"Microglia measured.")
 
     def run_batch(self):
@@ -571,3 +606,136 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.pbr.set_description(text)
         if (self.n_images > 0):
             self.run_batch_button.setText(f"■ Kill ({str(current+1).zfill(2)}/{str(self.n_images).zfill(2)})")
+    
+    def import_settings(self):
+        # 1. The control folder has to exist for any image.
+        controls_folder = os.path.join(self.sources_folder, "controls")
+        if not os.path.isdir(controls_folder):
+            print("Couldn't find the 'controls' folder.")
+            return False
+        # 2. The target image has to be fully processed.
+        img_name = self.images_combo.currentText()
+        classif_name = os.path.splitext(img_name)[0]+".txt"
+        result_name = os.path.splitext(img_name)[0]+".csv"
+        mask_path = os.path.join(controls_folder, "masks", img_name)
+        skel_path = os.path.join(controls_folder, "skeletons", img_name)
+        rslt_path = os.path.join(controls_folder, "results", result_name)
+        clsf_path = os.path.join(controls_folder, "classifications", classif_name)
+        if not os.path.isfile(mask_path):
+            print("The mask for this image is not available.")
+            return False
+        if not os.path.isfile(skel_path):
+            print("The skeleton for this image is not available.")
+            return False
+        if not os.path.isfile(rslt_path):
+            print("The results for this image are not available.")
+            return False
+        if not os.path.isfile(clsf_path):
+            print("The classification for this image is not available.")
+            return False
+        show_info("Restoring state...")
+        # 3. The settings file has to exist.
+        settings_path = os.path.join(controls_folder, "settings.txt")
+        if not os.path.isfile(settings_path):
+            print("Failed to locate the settings file.")
+            return False
+        with open(settings_path, 'r', encoding='utf-8') as f:
+            settings = json.load(f)
+        # 4. We raise a warning if we are restoring from an earlier version
+        parts_x = list(map(int, settings['Software version'].split('.')))
+        parts_y = list(map(int, __version__.split('.')))
+        if parts_x < parts_y:
+            show_warning("These data come from an anterior version of MGA, be careful!!!")
+        # 5. The image shape has to be the same
+        if self.mam.image.shape != tuple(settings['Image shape']):
+            print("The image shape is different from the expected one.")
+            return False
+        # 6. We restore the calibration
+        self.set_calibration(float(settings['Calibration'][0]), settings['Calibration'][1])
+        # 7. We try to restore models
+        if not self.set_unet_by_version(int(settings['Segmentation model'])):
+            print("Failed to locate the local UNet.")
+            return False
+        if not self.set_yolo_by_version(int(settings['Classification model'])):
+            print("Failed to locate the local YOLO.")
+            return False
+        # 8. We check that classes are compatibles
+        known_classes = set(settings['Class names'])
+        target_classes = set(self.mam.class_names)
+        if len(known_classes.intersection(target_classes)) != len(known_classes):
+            print("The list of classes doesn't match.")
+            return False
+        self.reset_table_ui()
+        # 9. Restoring parameters
+        self.probability_threshold_slider.setValue(int(100.0 * float(settings['Probability threshold'])))
+        self.minimal_area_input.setValue(int(settings['Minimal surface']))
+        # 10. Restore the mask
+        self.mam.mask = tifffile.imread(mask_path)
+        self.mam.skeleton = tifffile.imread(skel_path)
+        with open(clsf_path, 'r') as f:
+            self.mam.bindings_from_yolo(f.read())
+        self.show_classification()
+        self.show_skeleton()
+        return True
+    
+    def attempt_restore(self):
+        self.set_active_ui(False)
+        status = self.import_settings()
+        if status:
+            show_info("State restored.")
+        else:
+            show_info("Failed to restore state.")
+        self.set_active_ui(True)
+
+    def set_unet_by_version(self, version):
+        version = int(version)
+        # The loaded version is the good one.
+        loaded = self.mam.get_segmentation_version()
+        loaded = int(loaded) if (loaded is not None) else None
+        if (loaded is not None) and (loaded == version):
+            return True
+        # Check if the model is available locally.
+        model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "µnet")
+        if not os.path.isdir(model_path):
+            print("The desired UNet model doesn't exist locally.")
+            return False
+        version_path = os.path.join(model_path, f"version.txt")
+        if not os.path.isfile(version_path):
+            print("The desired UNet model doesn't have a version file.")
+            return False
+        index = -1
+        with open(version_path, 'r') as f:
+            index = int(f.read().strip())
+        if index != version:
+            print(f"UNet version {version} not found.")
+            return False
+        # Load the model
+        self.mam.set_segmentation_model(model_path)
+        return True
+    
+    def set_yolo_by_version(self, version):
+        version = int(version)
+        # The loaded version is the good one.
+        loaded = self.mam.get_classification_version()
+        loaded = int(loaded) if (loaded is not None) else None
+        if (loaded is not None) and (loaded == version):
+            return True
+        # Check if the model is available locally.
+        model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "µyolo")
+        if not os.path.isdir(model_path):
+            print("The desired YOLO model doesn't exist locally.")
+            return False
+        version_path = os.path.join(model_path, f"version.txt")
+        if not os.path.isfile(version_path):
+            print("The desired UNet model doesn't have a version file.")
+            return False
+        index = -1
+        with open(version_path, 'r') as f:
+            index = int(f.read().strip())
+        if index != version:
+            print(f"YOLO version {version} not found.")
+            return False
+        # Load the model
+        self.mam.set_classification_model(model_path)
+        return True
+        

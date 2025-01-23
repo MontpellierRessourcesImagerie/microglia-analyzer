@@ -140,27 +140,26 @@ class QtBatchRunners(QObject):
         img_path = os.path.join(self.source_dir, self.images_pool[index])
         img_data = tifffile.imread(img_path)
         s = self.settings
-        ma = MicrogliaAnalyzer(lambda x: print(x))
-        ma.set_input_image(img_data)
-        ma.set_calibration(*s['calibration'])
-        ma.set_segmentation_model(s['unet_path'])
-        ma.set_classification_model(s['yolo_path'])
-        ma.set_min_surface(s['cc_min_size'])
-        ma.set_proba_threshold(s['proba_threshold'])
-        ma.segment_microglia()
-        ma.classify_microglia()
-        ma.analyze_graph()
-        tsv = ma.as_tsv(self.images_pool[index])
-        if index == 0:
-            self.tsv_lines += tsv
-        else:
-            self.tsv_lines += tsv[1:]
-        classified = np.zeros(ma.mask.shape, dtype=np.uint8)
-        for (cls, seg_bbox) in ma.bindings:
-            classified[seg_bbox[0]:seg_bbox[2], seg_bbox[1]:seg_bbox[3]] = int(cls)
-        mask = (ma.mask > 0).astype(np.uint8) * classified
-        control_path = os.path.join(self.source_dir, "controls", self.images_pool[index])
-        tifffile.imwrite(control_path, np.stack([ma.skeleton, mask], axis=0))
+        mga = MicrogliaAnalyzer(lambda x: print(x))
+        mga.set_input_image(img_data)
+        mga.set_calibration(*s['calibration'])
+        mga.set_segmentation_model(s['unet_path'])
+        mga.set_classification_model(s['yolo_path'])
+        mga.set_min_surface(s['cc_min_size'])
+        mga.set_proba_threshold(s['proba_threshold'])
+        mga.segment_microglia()
+        mga.classify_microglia()
+        mga.analyze_graph()
+
+        controls_folder = os.path.join(self.source_dir, "controls")
+        os.makedirs(controls_folder, exist_ok=True)
+        self.write_csv(mga, controls_folder, self.images_pool[index])
+        self.write_mask(mga, controls_folder, self.images_pool[index])
+        self.write_skeleton(mga, controls_folder, self.images_pool[index])
+        self.write_classification(mga, controls_folder, self.images_pool[index])
+
+        tsv = mga.as_tsv(self.images_pool[index])
+        self.tsv_lines += tsv if (index == 0) else tsv[1:]
     
     def write_tsv(self):
         with open(os.path.join(self.source_dir, "controls", "results.csv"), 'w') as f:
@@ -175,3 +174,30 @@ class QtBatchRunners(QObject):
             self.write_tsv()
             self.update.emit(self.images_pool[i], i+1, len(self.images_pool))
         self.finished.emit()
+
+    def write_csv(self, mga, controls_folder, img_name):
+        measures_path = os.path.join(controls_folder, "results")
+        measure_path  = os.path.join(measures_path, os.path.splitext(img_name)[0]+".csv")
+        os.makedirs(measures_path, exist_ok=True)
+        measures = mga.as_tsv(img_name)
+        with open(measure_path, 'w') as f:
+            f.write("\n".join(measures))
+
+    def write_mask(self, mga, controls_folder, img_name):
+        masks_path = os.path.join(controls_folder, "masks")
+        mask_path  = os.path.join(masks_path, img_name)
+        os.makedirs(masks_path, exist_ok=True)
+        tifffile.imwrite(mask_path, mga.mask)
+
+    def write_skeleton(self, mga, controls_folder, img_name):
+        skeletons_path = os.path.join(controls_folder, "skeletons")
+        skeleton_path  = os.path.join(skeletons_path, img_name)
+        os.makedirs(skeletons_path, exist_ok=True)
+        tifffile.imwrite(skeleton_path, mga.skeleton)
+
+    def write_classification(self, mga, controls_folder, img_name):
+        classifications_path = os.path.join(controls_folder, "classifications")
+        classification_path  = os.path.join(classifications_path, os.path.splitext(img_name)[0]+".txt")
+        os.makedirs(classifications_path, exist_ok=True)
+        with open(classification_path, 'w') as f:
+            f.write("\n".join([str(b) for b in mga.bindings_to_yolo()]))

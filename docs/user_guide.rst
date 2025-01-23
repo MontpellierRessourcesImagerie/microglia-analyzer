@@ -17,7 +17,6 @@ Quick start: A user guide
 - From the GUI (Napari), a batch mode is available allowing you run the whole workflow over an entire folder.
 
 .. image:: _images/global/overview.png
-  :height: 720px
   :align: center
 
 2. Install the plugin 
