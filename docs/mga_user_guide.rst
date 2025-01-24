@@ -117,3 +117,9 @@ e. Extract measures + batch (Measures)
       |   :width: 600px                                    |   :width: 600px                                    |
       |   :align: center                                   |   :align: center                                   |
       +----------------------------------------------------+----------------------------------------------------+
+
+4. Workflow diagram
+===================
+
+.. image:: https://dev.mri.cnrs.fr/attachments/download/3644/complete-workflow.png
+   :target: https://dev.mri.cnrs.fr/attachments/download/3644/complete-workflow.png

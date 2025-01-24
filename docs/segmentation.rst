@@ -2,21 +2,23 @@
 Segmentation using a UNet2D
 ===========================
 
-You can retrain the model if you have some annotated data using the provided file: src/dl/unet2d_training.py
+0. What is UNet2D?
+==================
 
-.. image:: _images/dl/unet-architecture.png
-  :align: center
-
-
+- UNet2D is a deep-learning architecture of the family of convolutional neural-networks and of the sub-family of auto-encoders.
+- It is trained through supervized learning, which means that for training, some pairs of input image + expected segmentation (== ground-truth) are required.
+- After training, the model is able to produce a probability map through its process of inference. This probability map has to be thresholded to transform it into a mask.
+- UNet2D generates a semantic segmentation instead of an instances segmentation. It means that each pixel will contain the answer to the question "is this pixel part of a microglia?" but the cells won't be given individual IDs.
 
 1. Get your data ready
 ======================
 
+- You can retrain the model if you have some annotated data using the provided file: src/dl/unet2d_training.py
 - To train new UNet models, you need the file "src/dl/unet2d_training.py". It contains the entire workflow to produce a bundled model ready for deployment.
 - Before starting, create a folder named "models" to store all the new model versions you create.
 - You also need a "working_dir" where the script will export its temporary data.
 - To train the UNet model, you need two distinct folders. You can name them as you like.
-    - The first folder, referred to as "inputs", will contain ".tif" images with values normalized in the range [0.0, 1.0].
+    - The first folder, referred to as "inputs", will contain ".tif" images with values globally normalized in the range [0.0, 1.0].
     - The second folder, referred to as "masks", will also contain ".tif" images, but these will be binary masks. They are thresholded to everything above 0 upon opening, so there is no restriction on whether they should be 0 and 1 or 0 and 255.
     - Images in both folders should be named the same way.
 - The models produced by this script include:
@@ -135,4 +137,6 @@ These augmentations are applied on-the-fly at loading to ensure that each epoch 
 5. Usage
 ========
 
-- This model consumes
+- This model consumes patches of 512×512 pixels in input with and overlap of 128 pixels.
+- The merging is performed with the alpha-blending technique described on the page where the patches creation is explained.
+- The output is labeled by connected components and filtered by number of pixels (processed from a minimal area in µm²) before being presented to the user.
