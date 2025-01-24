@@ -196,7 +196,7 @@ class MicrogliaAnalyzer(object):
             path=self.classification_model_path, 
             force_reload=reload
         )
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        device = 'cpu' #'cuda' if torch.cuda.is_available() else 'cpu'
         self.classification_model.to(device)
         dn = self.classification_model.names
         self.class_names = [dn[int(i)] for i in range(len(dn))]

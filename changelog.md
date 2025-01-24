@@ -1,12 +1,15 @@
 # Change Log
 
-## Version 1.1.6 (23 Jan. 2025)
+## Version 1.1.6 (24 Jan. 2025)
 
 - Modified the output so it can be re-opened from the viewer.
 - The classifications are stored in the YOLO format. Masks and skeletons are saved as TIFFs.
 - There is still a "results.csv" file, but there is also an independant file per image.
 - Re-opening an image will also re-load the associated settings.
 - The documentation is in progress.
+- Added the export of PNG for quick status check, that don't require Napari.
+- Added the version number to the GUI for easier communication about issues.
+- Added a checkbox to allow the user to remove automatically previous attempts.
 
 ## Version 1.1.5 (21 Jan. 2025)
 

@@ -22,6 +22,33 @@ BBOX_COLORS = [
     '#FF0000FF'   # Red 
 ]
 
+def hex_to_bgr(color_hex):
+    color_hex = color_hex.lstrip('#')
+    if len(color_hex) == 8:
+        r, g, b, a = tuple(int(color_hex[i:i+2], 16) for i in (0, 2, 4, 6))
+    elif len(color_hex) == 6:
+        r, g, b = tuple(int(color_hex[i:i+2], 16) for i in (0, 2, 4))
+        a = 255
+    else:
+        raise ValueError(f"Invalid hex color: {color_hex}")
+
+    return (b, g, r, a)
+
+def convert_hex_colors_to_bgr():
+    return np.array([hex_to_bgr(color) for color in BBOX_COLORS])
+
+BBOX_COLORS_BGR = convert_hex_colors_to_bgr()
+
+def save_as_fake_colors(images, bindings, class_names, output_path):
+    image, mask = images
+    if (len(image.shape) != 2) or (len(mask.shape) != 2) or (image.shape != mask.shape):
+        raise ValueError("Incompatible inputs for visual check.")
+
+    canvas = normalize(image, 0, 255, np.uint8)
+    canvas = np.maximum(canvas, mask)
+    canvas = draw_bounding_boxes(canvas, bindings, class_names)
+    cv2.imwrite(output_path, canvas)
+
 
 def calculate_iou(box1, box2):
     """
@@ -80,14 +107,45 @@ def draw_bounding_boxes(image, bindings, class_names, exclude=-1, thickness=2):
     - exclude (int): Class to be excluded.
     - thickness (int): Thickness of the bounding-boxes outlines (default=2).
     """
-    canvas = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+    import tifffile
+    alpha_channel = np.zeros_like(image) + 255
+    image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+    color_channels = np.zeros_like(image)
     for cls, (y1, x1, y2, x2) in bindings:
         if cls == exclude:
             continue
-        cv2.rectangle(canvas, (x1, y1), (x2, y2), color=BBOX_COLORS[cls], thickness=thickness)
-        label = f"{class_names[int(cls)]}"
-        cv2.putText(canvas, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, BBOX_COLORS[cls], 1)
-    return canvas
+        alpha = BBOX_COLORS_BGR[cls][3]
+        color = BBOX_COLORS_BGR[cls][:3]
+        cv2.rectangle(color_channels, (x1, y1), (x2, y2), color=tuple([int(c) for c in color]), thickness=thickness)
+        cv2.rectangle(alpha_channel , (x1, y1), (x2, y2), color=255-int(alpha)                    , thickness=thickness)
+    alpha_channel  = cv2.cvtColor(alpha_channel, cv2.COLOR_GRAY2BGR)
+    alpha_channel  = alpha_channel.astype(np.float32) / 255.0
+    color_channels = color_channels.astype(np.float32) / 255.0
+    image          = image.astype(np.float32) / 255.0
+    color_channels *= (1.0 - alpha_channel)
+    image          *= (alpha_channel)
+    line_height    = 45
+    spacing        = 20
+    font_scale     = 1.0
+    height         = len(class_names) * (spacing + line_height)
+    image = np.floor((image + color_channels)*255).astype(np.uint8)
+    y, _, _ = image.shape
+    image = cv2.copyMakeBorder(image, top=0, bottom=height, right=0, left=0, borderType=cv2.BORDER_CONSTANT, value=(0, 0, 0))
+    r_h = 40
+    r_w = 65
+    for i, n in enumerate(class_names):
+        s = (20, y+spacing+i*(spacing+line_height))
+        e = (20+r_w, y+spacing+i*(spacing+line_height)+r_h)
+        print(s, e)
+        cv2.rectangle(
+            image, 
+            s,
+            e,
+            color=tuple([int(c) for c in BBOX_COLORS_BGR[i][:3]]),
+            thickness=-1
+        )
+        cv2.putText(image, n, (20+r_w+10, y+int(spacing/2)+i*(spacing+line_height)+r_h), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), 1)
+    return image
 
 
 def bindings_as_napari_shapes(bindings, exclude=-1):
@@ -174,3 +232,23 @@ def get_all_tiff_files(folder_path, no_ext=False):
                 else:
                     tiff_files.append(match.group(0))
         return sorted(tiff_files)
+
+
+def generate_random_bindings(image_size, num_bindings):
+    bindings = []
+    height, width = image_size
+    for _ in range(num_bindings):
+        cls = np.random.randint(0, 5)
+        x1, x2 = sorted(np.random.randint(0, width, size=2))
+        y1, y2 = sorted(np.random.randint(0, height, size=2))
+        bindings.append((cls, (y1, x1, y2, x2)))
+    return bindings
+
+if __name__ == "__main__":
+    import tifffile
+    image = tifffile.imread("/home/benedetti/Desktop/microglia/P7- moelle spinale.tif")
+    image = normalize(image, 0, 255, np.uint8)
+    bindings = generate_random_bindings(image.shape, 20)
+    class_names = ['garbage', 'amoeboid', 'rod', 'intermediate', 'homeostatic']
+    r = draw_bounding_boxes(image, bindings, class_names)
+    cv2.imwrite("/tmp/test.png", r)

@@ -18,9 +18,12 @@ import numpy as np
 import os
 import json
 import warnings
+import shutil
 
-from microglia_analyzer import TIFF_REGEX, __version__
-from microglia_analyzer.utils import get_all_tiff_files, bindings_as_napari_shapes, BBOX_COLORS
+from microglia_analyzer import TIFF_REGEX, __version__, __type__
+from microglia_analyzer.utils import (get_all_tiff_files, 
+                                      bindings_as_napari_shapes, 
+                                      BBOX_COLORS)
 from microglia_analyzer.ma_worker import MicrogliaAnalyzer
 from microglia_analyzer.qt_workers import (QtSegmentMicroglia, QtClassifyMicroglia,
                                           QtMeasureMicroglia, QtBatchRunners)
@@ -55,6 +58,9 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.classify_microglia_panel()
         self.measures_panel()
         self.setLayout(self.layout)
+        v = QLabel(f"Version: {__version__}/{__type__}")
+        v.setAlignment(Qt.AlignRight)
+        self.layout.addWidget(v)
     
     def media_control_panel(self):
         media_control_group = QGroupBox("Media Control")
@@ -65,6 +71,13 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.clear_state_button.setFont(self.font)
         self.clear_state_button.clicked.connect(self.clear_state)
         layout.addWidget(self.clear_state_button)
+
+        # Some vertical spacing
+        layout.addSpacing(20)
+
+        # Checkbox to discard previous runs
+        self.discard_runs_checkbox = QCheckBox("Discard previous run at opening")
+        layout.addWidget(self.discard_runs_checkbox)
 
         # Some vertical spacing
         layout.addSpacing(20)
@@ -217,6 +230,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.images_combo.setEnabled(state)
         self.calibration_input.setEnabled(state)
         self.unit_selector.setEnabled(state)
+        self.discard_runs_checkbox.setEnabled(state)
         self.calibrationButton.setEnabled(state)
         self.segment_microglia_button.setEnabled(state)
         self.minimal_area_input.setEnabled(state)
@@ -410,6 +424,9 @@ class MicrogliaAnalyzerWidget(QWidget):
             show_info("No folder selected")
             return
         self.sources_folder = folder_path
+        c_path = os.path.join(self.sources_folder, "controls")
+        if os.path.isdir(c_path) and self.discard_runs_checkbox.isChecked():
+            shutil.rmtree(c_path)
         self.images_combo.clear()
         self.images_combo.addItems(get_all_tiff_files(folder_path))
 
@@ -525,7 +542,8 @@ class MicrogliaAnalyzerWidget(QWidget):
         masks_path = os.path.join(controls_folder, "masks")
         mask_path  = os.path.join(masks_path, self.images_combo.currentText())
         os.makedirs(masks_path, exist_ok=True)
-        tifffile.imwrite(mask_path, self.mam.get_mask(True))
+        tifffile.imwrite(mask_path, self.mam.mask)
+        # save_as_fake_colors(self.mam.mask, mask_path.replace(".tif", ".png"))
 
     def write_skeleton(self, controls_folder):
         skeletons_path = os.path.join(controls_folder, "skeletons")

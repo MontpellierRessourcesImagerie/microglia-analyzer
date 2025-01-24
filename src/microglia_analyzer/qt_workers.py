@@ -3,7 +3,8 @@ from PyQt5.QtCore import pyqtSignal, pyqtSlot
 import requests
 import os
 import numpy as np
-from microglia_analyzer.utils import download_from_web, get_all_tiff_files
+from microglia_analyzer.utils import (download_from_web, get_all_tiff_files,
+                                      save_as_fake_colors)
 from microglia_analyzer.ma_worker import MicrogliaAnalyzer
 import tifffile
 
@@ -140,8 +141,9 @@ class QtBatchRunners(QObject):
         img_path = os.path.join(self.source_dir, self.images_pool[index])
         img_data = tifffile.imread(img_path)
         s = self.settings
+
         mga = MicrogliaAnalyzer(lambda x: print(x))
-        mga.set_input_image(img_data)
+        mga.set_input_image(img_data.copy())
         mga.set_calibration(*s['calibration'])
         mga.set_segmentation_model(s['unet_path'])
         mga.set_classification_model(s['yolo_path'])
@@ -152,11 +154,11 @@ class QtBatchRunners(QObject):
         mga.analyze_graph()
 
         controls_folder = os.path.join(self.source_dir, "controls")
-        os.makedirs(controls_folder, exist_ok=True)
         self.write_csv(mga, controls_folder, self.images_pool[index])
         self.write_mask(mga, controls_folder, self.images_pool[index])
         self.write_skeleton(mga, controls_folder, self.images_pool[index])
         self.write_classification(mga, controls_folder, self.images_pool[index])
+        self.write_visual_check(mga, controls_folder, self.images_pool[index])
 
         tsv = mga.as_tsv(self.images_pool[index])
         self.tsv_lines += tsv if (index == 0) else tsv[1:]
@@ -188,6 +190,17 @@ class QtBatchRunners(QObject):
         mask_path  = os.path.join(masks_path, img_name)
         os.makedirs(masks_path, exist_ok=True)
         tifffile.imwrite(mask_path, mga.mask)
+    
+    def write_visual_check(self, mga, controls_folder, img_name):
+        checks_path = os.path.join(controls_folder, "checks")
+        check_path  = os.path.join(checks_path, os.path.splitext(img_name)[0]+".png")
+        os.makedirs(checks_path, exist_ok=True)
+        save_as_fake_colors(
+            [mga.image, (mga.skeleton > 0).astype(np.uint8)*255], 
+            mga.bindings,
+            mga.class_names,
+            check_path
+        )
 
     def write_skeleton(self, mga, controls_folder, img_name):
         skeletons_path = os.path.join(controls_folder, "skeletons")
