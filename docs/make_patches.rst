@@ -17,7 +17,7 @@ At this point, you can open the widget: Microglia Analyzer > Tiles Creator.
 
 - The first step is to click on the :code:`Load` button and navigate to the folder containing your images.
 - You can get a global overview of your images by clicking on the :code:`Show sample` button. It will take up to 25 random elements and assemble them into a mosaic.
-- The number of images detected in the folder shoud be displayed in the "sources" field.
+- The number of images detected in the folder should be displayed in the "sources" field.
 - If all images have the same size, the "Shape" field should display it.
 
 
@@ -103,7 +103,7 @@ e. Conclusion
 
 - Our goal will be to cut our images in tiles having all the same size, so the models can get a fixed-size input.
 - The size of the tiles is set to 512×512 pixels by default because it is the size we used to train both our models.
-- Another setting is the overlap between tiles. It is set to 128 by default. It means that each tile will overlap the previous one by 128 pixels. It is very important in the case of filamentous structures as the lack of contiuous context could create cuts in the structures (see example below).
+- Another setting is the overlap between tiles. It is set to 128 by default. It means that each tile will overlap the previous one by 128 pixels. It is very important in the case of filamentous structures as the lack of continuous context could create cuts in the structures (see example below).
 
 +------------------------------------------------------+-------------------------------------------------+
 | .. image:: _images/patches/proba-no-overlap.png      | .. image:: _images/patches/mask-no-overlap.png  |

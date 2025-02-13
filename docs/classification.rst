@@ -17,13 +17,13 @@ Classification using a YOLOv5
     - :code:`val_batch0_pred.jpg`: An overview of what the model predicted on an image from the validation set.
     - :code:`val_batch0_labels.jpg`: The ground-truth of the image above.
     - :code:`train_batchN.jpg`: A sample of N images and their labels (ground-truth) from the training-set.
-    - :code:`results.png`: Plot of metrics along the training (box loss, object loss, class loss, precesion & recall).
+    - :code:`results.png`: Plot of metrics along the training (box loss, object loss, class loss, precision & recall).
     - :code:`results.csv`: Actual values that were plotted in :code:`results.png`.
     - :code:`R_curve.png`: Recall over epochs plotted.
     - :code:`P_curve.png`: Precision over epochs plotted.
     - :code:`PR_curve.png`: Precision against recall plotted.
     - :code:`F1_curve.png`: F1 score over epochs.
-    - :code:`opt.yml`: Settings used to traing the models.
+    - :code:`opt.yml`: Settings used to training the models.
     - :code:`labels_correlogram.jpg`: Distribution of the bounding-boxes locations and dimensions.
     - :code:`labels.jpg`: Distribution of the number of labels for each class, and their location in images.
     - :code:`hyp.yaml`: Hyper-parameters used to train the model.
@@ -33,9 +33,9 @@ Classification using a YOLOv5
 2. Data augmentation
 ====================
 
-- **HSV-Hue Augmentation**: The hue augmentation factor for HSV color space. Here, we work on grayscale images, so the provided value doesn't matter.
+- **HSV-Hue Augmentation**: The hue augmentation factor for HSV color space. Here, we work on gray scale images, so the provided value doesn't matter.
 - **HSV-Saturation Augmentation**: The saturation augmentation factor for HSV color space.
-- **HSV-Value Augmentation**: The value augmentation factor for HSV color space. It was blocked to 0.01 to avoid making objets in the background visible.
+- **HSV-Value Augmentation**: The value augmentation factor for HSV color space. It was blocked to 0.01 to avoid making objects in the background visible.
 - **Rotation Degrees**: The maximum rotation degrees for data augmentation. Here, we allowed a range of 90° in either direction.
 - **Translation**: The maximum translation factor for data augmentation. Our objects can be anywhere on images, so we allowed a range of half the image size of each axis.
 - **Scale**: The scaling factor for data augmentation. The scale matters a lot to classify microglia, so it was locked to 1.0.
@@ -46,7 +46,7 @@ Classification using a YOLOv5
 3. Setup
 ========
 
-- Required to use YOLOv5m because there was not enough learning capacity avec YOLOv5s
+- Required to use YOLOv5m because there was not enough learning capacity with YOLOv5s
 
 +-----------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
 + Settings              | Description                                                                                                                                           |
@@ -65,7 +65,7 @@ Classification using a YOLOv5
 +-----------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
 | model_name_prefix     | Prefix that will be given to the folders containing newly created models.                                                                             |
 +-----------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
-| reset_local_data      | Should the local set of images (== the data in the working directory) be reseted at every training. Recommended.                                      |
+| reset_local_data      | Should the local set of images (== the data in the working directory) be reset at every training. Recommended.                                        |
 +-----------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
 | validation_percentage | Percentage of the provided data that will be used for the validation step.                                                                            |
 +-----------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -79,7 +79,7 @@ Classification using a YOLOv5
 +-----------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
 | deterministic         | Should the inference be deterministic (one input always give the same output). Works by using a random seed if False.                                 |
 +-----------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
-| cos_lr                | Usually, the learning rate dicreases as the epochs go. If True, it will rather follow a sinusoidal curve, starting on a maxima (hence the cosine)     |
+| cos_lr                | Usually, the learning rate decreases as the epochs go. If True, it will rather follow a sinusoidal curve, starting on a maxima (hence the cosine)     |
 +-----------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
 | label_smoothing       | Should the probability map of classes be smoothed (blurred) before building bounding boxes.                                                           |
 +-----------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+

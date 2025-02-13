@@ -15,7 +15,7 @@ Measures on microglia
 +-----------------------+------------------------------------------------------------------------------------+
 | # leaves              | Total number of leaves (== end point vertices) for this cell.                      |
 +-----------------------+------------------------------------------------------------------------------------+
-| # juctions            | Number of branches crossing in this cell (all vertices except leaves)              |
+| # junctions           | Number of branches crossing in this cell (all vertices except leaves)              |
 +-----------------------+------------------------------------------------------------------------------------+
 | Average branch length | Average length of a branch for the given cell.                                     |
 +-----------------------+------------------------------------------------------------------------------------+
@@ -23,7 +23,7 @@ Measures on microglia
 +-----------------------+------------------------------------------------------------------------------------+
 | Max branch length     | Length of the longest branch for this cell.                                        |
 +-----------------------+------------------------------------------------------------------------------------+
-| Label                 | Only useful for debuging. Index of the segmented microglia on the mask.            |
+| Label                 | Only useful for debugging. Index of the segmented microglia on the mask.           |
 +-----------------------+------------------------------------------------------------------------------------+
 | Class                 | Class (Amoeboid, Intermediate or Homeostatic) attributed to this cell              |
 +-----------------------+------------------------------------------------------------------------------------+

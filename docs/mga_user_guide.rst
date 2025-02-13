@@ -32,7 +32,7 @@ a. Import your experiment (Media control)
 
 - In this section, you will import your experiment so you can visualize and analyze it.
 - The :code:`Clear state` button is useless unless you just analyzed something else and need to reset the plugin.
-- Use the :code:`Sources folder` to provide the path to the folder containing your images. It is the path of "my-awesome-experiment" in the previous example.
+- Use the :code:`Sources folder` button to provide the path to the folder containing your images. It is the path of "my-awesome-experiment" in the previous example.
 - In the drop-down menu below, all the images of your folder should show up. Clicking on any of them in the list should display it in the main viewer.
 - You can adjust the contrast and brightness in the upper-left corner of Napari.
 
@@ -64,9 +64,9 @@ d. Classify the microglia (Classification)
 
 - Click the classify button.
 - The model has to be downloaded from the internet the first time you use it.
-- By the end of the process, the possible classes will show up below the :code:`Classify` button, with their assoiated color.
+- By the end of the process, the possible classes will show up below the :code:`Classify` button, with their associated color.
 - Some elements are classified as "Garbage" (aggregated objects, out-of-focus, filaments from other slices, ...) so you can use the :code:`Show garbage` checkbox to hide them.
-- At this point, you must have each microglia surounded by a colored box, representing its class.
+- At this point, you must have each microglia surrounded by a colored box, representing its class.
 
 e. Extract measures + batch (Measures)
 --------------------------------------------

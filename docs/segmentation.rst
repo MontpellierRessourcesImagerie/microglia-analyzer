@@ -44,7 +44,7 @@ The data augmentation pipeline includes the following transformations:
 - **Random flips**: The images are randomly flipped horizontally and/or vertically.
 - **Random gamma adjustment**: A random gamma correction is applied to every patch. It allows to spread or dilate the histogram.
 - **Random noise addition**: Random Gaussian noise is added to the images.
-- **Filament ruptures**: On many images, the filaments pass on another Z plane before coming back. To simulate that, some filamentous areas are randomly discarded (blured).
+- **Filament ruptures**: On many images, the filaments pass on another Z plane before coming back. To simulate that, some filamentous areas are randomly discarded (blurred).
 
 These augmentations are applied on-the-fly at loading to ensure that each epoch sees a different set of augmented images, which helps in improving the robustness and generalization of the model.
 
@@ -59,7 +59,7 @@ These augmentations are applied on-the-fly at loading to ensure that each epoch 
 ========
 
 - If you already have a Python environment in which "Microglia Analyzer" is installed, it already contains everything you need to train a model.
-- To launch the training, you just have to fill the setings in the first section, and run the script.
+- To launch the training, you just have to fill the settings in the first section, and run the script.
 
 +----------------------+--------------------------------------------------------------------------------------------------------------------------------+
 | Name                 | Description                                                                                                                    |

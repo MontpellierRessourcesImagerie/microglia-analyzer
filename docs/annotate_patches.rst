@@ -132,7 +132,7 @@ The UNet architecture:
 Notes
 =====
 
-- If you are working on RGB images, they will be converted to grayscale.
+- If you are working on RGB images, they will be converted to gray scale.
 - If you already annotated some images, your annotations will be loaded when you open the widget.
 - In the ".txt" files generated for each image by the widget, the content is as follows:
    - [integer]: the class index (starting from 0).
