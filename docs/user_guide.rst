@@ -22,7 +22,7 @@ Quick start: A user guide
 2. Install the plugin 
 =====================
 
-- We strongly recommand to use `conda <https://docs.conda.io/en/latest/miniconda.html>`_ or any other virtual environment manager instead of installing Napari and microglia-analyzer in your system's Python.
+- We strongly recommend to use `conda <https://docs.conda.io/en/latest/miniconda.html>`_ or any other virtual environment manager instead of installing Napari and microglia-analyzer in your system's Python.
 - Napari is only required if you want to use microglia-analyzer with a graphical interface.
 - Napari is not part of microglia-analyzer's dependencies, so you will have to install it separately.
 - Each of the commands below is supposed to be run after you activated your virtual environment.
