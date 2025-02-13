@@ -11,7 +11,7 @@ Classification using a YOLOv5
 - To train the YOLO model, you need two distinct folders. You can name them as you like.
     - The first folder, referred to as :code:`images`, will contain :code:`.png` images with values globally normalized in the range [0, 255].
     - The second folder, referred to as :code:`labels`, will also contain :code:`.txt` files in which each line contains: C, X1, Y1, X2, Y2.
-    - The names in both folders should be the same with only the exntension changing.
+    - The names in both folders should be the same with only the extension changing.
 - The models produced by this script include:
     - :code:`version.txt`: The version index of this model, allowing detection if the model should be re-downloaded from the internet.
     - :code:`val_batch0_pred.jpg`: An overview of what the model predicted on an image from the validation set.
@@ -33,10 +33,10 @@ Classification using a YOLOv5
 2. Data augmentation
 ====================
 
-- **HSV-Hue Augmentation**: The hue augmentation factor for HSV color space. Here, we work on grayscale image, so the provided value doesn't matter.
+- **HSV-Hue Augmentation**: The hue augmentation factor for HSV color space. Here, we work on grayscale images, so the provided value doesn't matter.
 - **HSV-Saturation Augmentation**: The saturation augmentation factor for HSV color space.
 - **HSV-Value Augmentation**: The value augmentation factor for HSV color space. It was blocked to 0.01 to avoid making objets in the background visible.
-- **Rotation Degrees**: The maximum rotation degrees for data augmentation. Here, we allowed a range of 90° in either directions.
+- **Rotation Degrees**: The maximum rotation degrees for data augmentation. Here, we allowed a range of 90° in either direction.
 - **Translation**: The maximum translation factor for data augmentation. Our objects can be anywhere on images, so we allowed a range of half the image size of each axis.
 - **Scale**: The scaling factor for data augmentation. The scale matters a lot to classify microglia, so it was locked to 1.0.
 - **Vertical Flip Probability**: The probability of performing a vertical flip during data augmentation.
@@ -90,7 +90,7 @@ Classification using a YOLOv5
 ======================================
 
 - By the end of the classification process, we have a set of bounding-boxes deduced by the model. Each box has a class (garbage, amoeboid, intermediate or homeostatic).
-- At the previous step, we built masks representing microglia.
+- In the previous step, we built masks representing microglia.
 - However, at this point, there is no relation between the segmentation and the classification. We need to bind each item from the mask to a class.
 - To do that, a system of vote was implemented.
     - Each object starts with a set of N bins, with N being the number of classes. Along the process, each bin will count the number of votes for each class.
@@ -98,5 +98,5 @@ Classification using a YOLOv5
     - In the target, the bin corresponding to the bounding-box's class will receive P×S votes with:
         - P: The number of the target's pixels in the bounding-box.
         - S: The certainty score of the bounding-box.
-    - At the end, we take the major vote for each object.
+    - At the end, we take the majority vote for each object.
     - An object with no vote is automatically declared garbage.

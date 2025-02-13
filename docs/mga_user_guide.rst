@@ -12,7 +12,7 @@ This Napari plugin expects your data to respect a precise format:
 * The files must have exactly 1 channel. We recommend to keep your images in 16-bits grayscale.
 * All the images that you want to process at the same time must be in the same folder.
 * Avoid using special characters in the folder's name. (Tips: `Doranum <https://doranum.fr/stockage-archivage/comment-nommer-fichiers_10_13143_wgqw-aa59/>`_)
-* Both models used by this plugin were trained on images having a pixel size of 0.325 µm, you way have troubles if your images have a different pixel size.
+* Both models used by this plugin were trained on images having a pixel size of 0.325 µm, you may have troubles if your images have a different pixel size.
 
 .. code-block:: bash
 
@@ -33,7 +33,7 @@ a. Import your experiment (Media control)
 - In this section, you will import your experiment so you can visualize and analyze it.
 - The :code:`Clear state` button is useless unless you just analyzed something else and need to reset the plugin.
 - Use the :code:`Sources folder` to provide the path to the folder containing your images. It is the path of "my-awesome-experiment" in the previous example.
-- In the drop-dowm menu below, all the images of your folder should show up. Ckicking on any of them should display it in the main viewer.
+- In the drop-down menu below, all the images of your folder should show up. Clicking on any of them in the list should display it in the main viewer.
 - You can adjust the contrast and brightness in the upper-left corner of Napari.
 
 
@@ -42,7 +42,7 @@ b. Calibration (Calibration)
 
 - Providing measures in physical units requires the plugin to know the size of a pixel.
 - Just fill the number field with the size of a pixel and select the unit in the drop-down menu next to it before clicking the :code:`Apply calibration` button.
-- If you loose your image or if it becomes too small, you can click on the little "Home" button in the lower-left corner of Napari to center the view.
+- If your image doesn't appear in the viewer anymore, or if it becomes too small, you can click on the little "Home" button in the lower-left corner of Napari to center the view.
 
 c. Segment the microglia (Segmentation)
 ----------------------------------------
@@ -65,7 +65,7 @@ d. Classify the microglia (Classification)
 - Click the classify button.
 - The model has to be downloaded from the internet the first time you use it.
 - By the end of the process, the possible classes will show up below the :code:`Classify` button, with their assoiated color.
-- Some elements are classified as "garbages" (aggregated objects, out-of-focus, filaments from other slices, ...) so you can use the :code:`Show garbage` checkbox to hide them.
+- Some elements are classified as "Garbage" (aggregated objects, out-of-focus, filaments from other slices, ...) so you can use the :code:`Show garbage` checkbox to hide them.
 - At this point, you must have each microglia surounded by a colored box, representing its class.
 
 e. Extract measures + batch (Measures)

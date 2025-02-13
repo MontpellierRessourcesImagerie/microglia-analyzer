@@ -77,7 +77,7 @@ b. Target bounds
 c. Output type
 --------------
 
-- Depending on your target bounds, will be constrained to a certain type of data.
+- Depending on your target bounds, the values of the final image will be constrained to a certain type of data.
 - For example:
    - If you need to export your values between 0.0 and 1.0, you can only use the :code:`float32` type.
    - If you need to export your values between 0 and 255, you can use the :code:`uint8`, :code:`uint16` or :code:`float32` types.
@@ -86,11 +86,11 @@ c. Output type
 d. Output format
 ----------------
 
-- Depending on where you want to use your patches, and the data-type of your patches, you will have to use a certained file-format.
+- Depending on where you want to use your patches, and the data-type of your patches, you will have to use a certain file-format.
 - For example:
    - You can use any file format to store :code:`uint8` data.
    - You can use :code:`.tif` to store any type of data.
-   - You can use :code:`.jpg` to store :code:`uint8` data (even though you should never use this data type except to make images for your slides or presentations).
+   - You can use :code:`.jpg` to store :code:`uint8` data (even though you should never use this file format except to make images for your slides or presentations).
 
 e. Conclusion
 -------------
@@ -127,6 +127,6 @@ e. Conclusion
 ============================================
 
 - In this block, you have only 3 buttons:
-   - :code:`Select export folder` will ask you for an empty folder in which the patches will be exported.
+   - :code:`Select export folder` will ask you for an empty folder into which the patches will be exported.
    - :code:`Empty export folder` to remove everything present in the folder you selected.
    - :code:`Export tiles` to launch the conversion of all the images from your input folder to patches in the output folder.

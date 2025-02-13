@@ -20,7 +20,7 @@ import json
 import warnings
 import shutil
 
-from microglia_analyzer import TIFF_REGEX, __version__, __type__
+from microglia_analyzer import __release__, __version__
 from microglia_analyzer.utils import (get_all_tiff_files, 
                                       bindings_as_napari_shapes, 
                                       BBOX_COLORS)
@@ -32,7 +32,6 @@ _IMAGE_LAYER_NAME          = "µ-Image"
 _SEGMENTATION_LAYER_NAME   = "µ-Segmentation"
 _CLASSIFICATION_LAYER_NAME = "µ-Classification"
 _SKELETON_LAYER_NAME       = "µ-Skeleton"
-_RELEASE                   = False
 
 class MicrogliaAnalyzerWidget(QWidget):
     
@@ -58,7 +57,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.classify_microglia_panel()
         self.measures_panel()
         self.setLayout(self.layout)
-        v = QLabel(f"Version: {__version__}/{__type__}")
+        v = QLabel(f"Version: {__version__}/{__release__}")
         v.setAlignment(Qt.AlignRight)
         self.layout.addWidget(v)
     
@@ -271,7 +270,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.set_calibration(pixelSize, unit)
 
     def ask_for_model_folder_popup(self, category):
-        if _RELEASE:
+        if __release__:
             return
         model_path = QFileDialog.getExistingDirectory(self, f"Select {category} model folder")
         if not os.path.isdir(model_path):

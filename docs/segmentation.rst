@@ -5,7 +5,7 @@ Segmentation using a UNet2D
 0. What is UNet2D?
 ==================
 
-- UNet2D is a deep-learning architecture of the family of convolutional neural-networks and of the sub-family of auto-encoders.
+- UNet2D is a deep-learning architecture in the family of convolutional neural-networks and in the sub-family of auto-encoders.
 - It is trained through supervized learning, which means that for training, some pairs of input image + expected segmentation (== ground-truth) are required.
 - After training, the model is able to produce a probability map through its process of inference. This probability map has to be thresholded to transform it into a mask.
 - UNet2D generates a semantic segmentation instead of an instances segmentation. It means that each pixel will contain the answer to the question "is this pixel part of a microglia?" but the cells won't be given individual IDs.
@@ -36,7 +36,7 @@ Segmentation using a UNet2D
 2. Data augmentation
 ====================
 
-The images on which we have to work have a wide entropy, so we need a solid data augmentation workflow to avoid having to annotate an unreasonable number of images, and to ensure that the model generalizes well to different types of data.
+The images on which we have to work have a wide variance, so we need a solid data augmentation workflow to avoid having to annotate an unreasonable number of images, and to ensure that the model generalizes well to different types of data.
 
 The data augmentation pipeline includes the following transformations:
 
@@ -51,14 +51,14 @@ These augmentations are applied on-the-fly at loading to ensure that each epoch 
 3. Filaments extraction
 =======================
 
-- Images containing filaments actually contain 96% of background, which represents a massive dis-balance between the background and foreground classes.
+- Images containing filaments actually contain 96% of background, which represents a massive imbalance between the background and foreground classes.
 - Using a usual loss function would end-up in the model predicting only solid black patches, as it would consider that it is 96% correct.
 - To address that problem, we had to re-implement the clDice loss as described in the paper: https://doi.org/10.48550/arXiv.2404.00130.
 
 4. Setup
 ========
 
-- If you already have an Python environment in which "Microglia Analyzer" is installed, it aleady contains everything you need to train a model.
+- If you already have a Python environment in which "Microglia Analyzer" is installed, it already contains everything you need to train a model.
 - To launch the training, you just have to fill the setings in the first section, and run the script.
 
 +----------------------+--------------------------------------------------------------------------------------------------------------------------------+
@@ -137,6 +137,6 @@ These augmentations are applied on-the-fly at loading to ensure that each epoch 
 5. Usage
 ========
 
-- This model consumes patches of 512×512 pixels in input with and overlap of 128 pixels.
+- This model consumes patches of 512×512 pixels, with an overlap of 128 pixels.
 - The merging is performed with the alpha-blending technique described on the page where the patches creation is explained.
 - The output is labeled by connected components and filtered by number of pixels (processed from a minimal area in µm²) before being presented to the user.

@@ -1,5 +1,5 @@
 __version__ = "1.1.7"
-__type__ = "dev"
+__release__ = "dev" # "dev" or "stable"
 
 import re
 

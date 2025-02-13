@@ -12,9 +12,9 @@ Quick start: A user guide
 - The measures (bundled in a CSV file by the end) include:
    - The total length of each cell
    - The number of junctions for each cell
-   - The number of leaves for each cell
+   - The number of end points for each cell
    - The average branch length for each cell
-- From the GUI (Napari), a batch mode is available allowing you run the whole workflow over an entire folder.
+- From the GUI (Napari), a batch mode is available allowing you to run the whole workflow on an entire folder.
 
 .. image:: _images/global/overview.png
   :align: center
@@ -25,7 +25,7 @@ Quick start: A user guide
 - We strongly recommand to use `conda <https://docs.conda.io/en/latest/miniconda.html>`_ or any other virtual environment manager instead of installing Napari and microglia-analyzer in your system's Python.
 - Napari is only required if you want to use microglia-analyzer with a graphical interface.
 - Napari is not part of microglia-analyzer's dependencies, so you will have to install it separately.
-- Each of the commands below is supposed to be ran after you activated your virtual environment.
+- Each of the commands below is supposed to be run after you activated your virtual environment.
 - If the install was successful, you should see the plugin in Napari in the top bar menu: Plugins > Microglia Analyzer > Microglia Analyzer.
 
 A. Development versions

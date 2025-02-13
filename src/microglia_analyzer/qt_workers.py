@@ -3,6 +3,7 @@ from PyQt5.QtCore import pyqtSignal, pyqtSlot
 import requests
 import os
 import numpy as np
+
 from microglia_analyzer.utils import (download_from_web, get_all_tiff_files,
                                       save_as_fake_colors)
 from microglia_analyzer.ma_worker import MicrogliaAnalyzer
@@ -10,98 +11,110 @@ import tifffile
 
 _MODELS = "https://raw.githubusercontent.com/MontpellierRessourcesImagerie/microglia-analyzer/refs/heads/main/src/microglia_analyzer/models.json"
 
-class QtSegmentMicroglia(QObject):
-    
+class QtVersionableDL(QObject):
+
     finished = pyqtSignal()
     update   = pyqtSignal(str, int, int)
 
-    def _fetch_descriptor(self):
+    def __init__(self, pbr, mga, idf=None, tgt_path=None):
+        super().__init__()
+        self.pbr = pbr # Progress bar
+        self.mga = mga # Microglia analyzer
+        self.target_path = tgt_path # Theoritical path to the model
+        self.latest = None # The latest version of the model (from the online JSON).
+        self.model_path = None # The actual path to the model
+        self.identifier = idf # The identifier of the model ('µnet', 'µyolo', etc.)
+        self.local_version = None # The version of the model locally stored.
+    
+    def run(self):
+        if not self._early_abort():
+            self._seek_local_model()
+            self._fetch_versions()
+            self._download_updates()
+            self._run_model()
+        self.finished.emit()
+    
+    def _early_abort(self):
+        model = None
+        try:
+            model = self.mga.get_model_path(self.identifier)
+        except ValueError as _:
+            print(f"Invalid identifier: {self.identifier}.")
+            return True
+        return model is not None
+
+    def _seek_local_model(self):
+        """ Checks if a model is present locally and sets the model_path attribute. """
+        if not os.path.isdir(self.target_path):
+            return False
+        v_path = os.path.join(self.target_path, "version.txt")
+        if not os.path.isfile(v_path):
+            return False
+        self.model_path = self.target_path
+        with open(v_path, 'r') as f:
+            self.local_version = int(f.read().strip())
+        return True
+    
+    def _fetch_versions(self):
         """ Reads the JSON file from the URL and stores it in self.versions """
         try:
-            self.versions = requests.get(_MODELS).json()
-        except requests.exceptions.RequestException as e:
-            print("Failed to fetch the models descriptor.")
-            self.versions = None
+            versions = requests.get(_MODELS).json()
+            if versions is None:
+                raise requests.exceptions.RequestException
+            self.latest = versions.get(self.identifier, None)
+        except requests.exceptions.RequestException as _:
+            print("Failed to fetch the latest models version.")
+            self.latest = None
+        return self.latest is not None
+    
+    def _download_updates(self):
+        if self.latest is None:
+            return
+        if self.local_version == int(self.latest['version']):
+            print(f"Model '{self.identifier}' is up to date.")
+            return
+        try:
+            download_from_web(self.latest['url'], self.target_path)
+            self.model_path = self.target_path
+        except requests.exceptions.RequestException as _:
+            print("Failed to download the latest model.")
+    
+    def _run_model(self):
+        return
+        
 
-    def _check_updates(self):
-        if not self.versions:
-            return
-        if not os.path.isdir(self.model_path):
-            download_from_web(self.versions['µnet']['url'], self.model_path)
-            print("Model downloaded.")
-            return
-        v_path = os.path.join(self.model_path, "version.txt")
-        local_version = 0
-        with open(v_path, 'r') as f:
-            local_version = int(f.read().strip())
-        if local_version != int(self.versions['µnet']['version']):
-            download_from_web(self.versions['µnet']['url'], self.model_path)
-            print("Model updated.")
-            return
-        print("Model is up to date.")
+class QtSegmentMicroglia(QtVersionableDL):
 
     def __init__(self, pbr, mga):
-        super().__init__()
-        self.pbr = pbr
-        self.mga = mga
-        self.versions = None
-        self.model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "µnet")
+        super().__init__(
+            pbr, 
+            mga,
+            "µnet",
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "µnet")
+        )
 
-    def run(self):
-        if self.mga.segmentation_model is None:
-            self._fetch_descriptor()
-            self._check_updates()
-            self.mga._log(f"Segmenting microglia using the version {self.versions['µnet']['version']}")
+    def _run_model(self):
+        if (self.mga.segmentation_model is None) and (self.model_path is not None):
+            self.mga._log(f"Segmenting microglia using the version {self.latest['version']}")
             self.mga.set_segmentation_model(self.model_path)
         self.mga.segment_microglia()
-        self.finished.emit()
 
 
-class QtClassifyMicroglia(QObject):
-    
-    finished = pyqtSignal()
-    update   = pyqtSignal(str, int, int)
-
-    def _fetch_descriptor(self):
-        """ Reads the JSON file from the URL and stores it in self.versions """
-        try:
-            self.versions = requests.get(_MODELS).json()
-        except requests.exceptions.RequestException as e:
-            print("Failed to fetch the models descriptor.")
-            self.versions = None
-
-    def _check_updates(self):
-        if not self.versions:
-            return
-        if not os.path.isdir(self.model_path):
-            download_from_web(self.versions['µyolo']['url'], self.model_path)
-            print("Model downloaded.")
-            return
-        v_path = os.path.join(self.model_path, "version.txt")
-        local_version = 0
-        with open(v_path, 'r') as f:
-            local_version = int(f.read().strip())
-        if local_version != int(self.versions['µyolo']['version']):
-            download_from_web(self.versions['µyolo']['url'], self.model_path)
-            print("Model updated.")
-            return
-        print("Model is up to date.")
+class QtClassifyMicroglia(QtVersionableDL):
 
     def __init__(self, pbr, mga):
-        super().__init__()
-        self.pbr = pbr
-        self.mga = mga
-        self.versions = None
-        self.model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "µyolo")
+        super().__init__(
+            pbr,
+            mga,
+            "µyolo",
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "µyolo")
+        )
 
-    def run(self):
-        if self.mga.classification_model is None:
-            self._fetch_descriptor()
-            self._check_updates()
-            self.mga._log(f"Classifying microglia using the version {self.versions['µyolo']['version']}")
+    def _run_model(self):
+        if (self.mga.classification_model is None) and (self.model_path is not None):
+            self.mga._log(f"Classifying microglia using the version {self.latest['version']}")
             self.mga.set_classification_model(self.model_path)
         self.mga.classify_microglia()
-        self.finished.emit()
 
 class QtMeasureMicroglia(QObject):
     

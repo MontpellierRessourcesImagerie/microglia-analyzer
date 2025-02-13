@@ -69,15 +69,15 @@ The UNet architecture:
 ==============================
 
 - To annotate an object, you have to draw a bounding-box around it. You must limit yourself to rectangles. Do not use ellipses or polygons or anything else.
-- Choose the class for which you want to create annotations for by clicking on its corresponding layer in the left column of Napari.
-- You can choose the rectangle tool in the upper-left section of the Napari's window.
+- Choose the class for which you want to create annotations by clicking on its corresponding layer in the left column of Napari.
+- You can choose the rectangle tool in the upper-left section of Napari's window.
 - Your boxes should contain the whole object and a few pixels around it.
 - It is not a problem if the boxes overlap.
-- If you failed a box, don't edit it: delete it and draw a new one.
+- If you failed to draw a box correctly, don't edit it: delete it and draw a new one.
 - If you don't plan to annotate many images, you should really be careful not to forget any object on your images.
 - When you are happy with the annotations you made, click the :code:`Save annotations` button in the "Annotations management" section.
 - In the "Classes management" section, a table should have appeared to show you global statistics about your annotations.
-- At the exception of your garbage class (if you have one), you should try to keep the number of annotations for each class balanced.
+- With the exception of your garbage class (if you have one), you should try to keep the number of annotations for each class balanced.
 - A new folder with the "-labels" suffix should have appeared in the root folder. It contains the annotations you made as TXT files.
 - A new file with the "-classes.txt" suffix should have appeared in the root folder. It contains the classes you created.
 - Your files architecture should now look like this:
@@ -100,10 +100,10 @@ The UNet architecture:
 5. Annotate your data for UNet
 ==============================
 
-- To annotate objects for UNet, you have to create complete masks of each object.
+- To annotate objects for UNet, avoid doing sparse annotations on your images. Each mask must be the exact representation of the object.
 - For that, click on the :code:`Add mask` button in the "Masks" section.
 - You just have to add it once, and it will automatically be added for all images.
-- Use the brush and the eraser tools in the upper-left section of the Napari's window to draw and erase your masks.
+- Use the brush and the eraser tools in the upper-left section of Napari's window to draw and erase your masks.
 - Once you are done, click the :code:`Save masks` button in the "Masks" section.
 - The skeleton of your mask should appear, make sure that it is correct and doesn't contain extra branches or holes. Otherwise, it is what your model will learn.
 - Your files architecture should now look like this:

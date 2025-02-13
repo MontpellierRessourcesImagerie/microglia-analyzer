@@ -2,8 +2,8 @@
 Measures on microglia
 =====================
 
-- To provide some measurements, microglia as interpreted as graphs.
-- The length are in physical unit if you didn't forget to calibrate your images.
+- To provide some measurements, microglia are interpreted as graphs.
+- The lengths are in physical unit if you didn't forget to calibrate your images.
 - The final CSV contains the following data:
 
 +-----------------------+------------------------------------------------------------------------------------+
@@ -29,4 +29,4 @@ Measures on microglia
 +-----------------------+------------------------------------------------------------------------------------+
 
 - Here is an example file as it is produced by the plugin: you can download it from `this link <_images/results.csv>`_.
-- Values are sepaarted with tabulations.
+- Values are separated with tabulations.

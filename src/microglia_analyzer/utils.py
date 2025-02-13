@@ -5,6 +5,7 @@ import tempfile
 import os
 import numpy as np
 import shutil
+from contextlib import closing
 from microglia_analyzer import TIFF_REGEX
 from microglia_analyzer.tiles.tiler import normalize
 
@@ -136,7 +137,6 @@ def draw_bounding_boxes(image, bindings, class_names, exclude=-1, thickness=2):
     for i, n in enumerate(class_names):
         s = (20, y+spacing+i*(spacing+line_height))
         e = (20+r_w, y+spacing+i*(spacing+line_height)+r_h)
-        print(s, e)
         cv2.rectangle(
             image, 
             s,
@@ -170,7 +170,7 @@ def bindings_as_napari_shapes(bindings, exclude=-1):
             [y1, x1],  # Upper-left
             [y1, x2],  # Upper-right
             [y2, x2],  # Lower-right
-            [y2, x1],  # Lower-left
+            [y2, x1]   # Lower-left
         ])
         colors.append(BBOX_COLORS[cls])
         items.append(rect)
@@ -197,19 +197,28 @@ def download_from_web(url, extract_to, timeout=100):
     with tempfile.TemporaryDirectory() as temp_dir:
         zip_path = os.path.join(temp_dir, "downloaded.zip")
         print(f"Downloading model from {url}...")
+
         try:
-            with requests.get(url, stream=True, timeout=timeout) as response:
+            with closing(requests.get(url, stream=True, timeout=timeout)) as response:
                 response.raise_for_status()
                 with open(zip_path, 'wb') as f:
                     shutil.copyfileobj(response.raw, f)
+
+            if not zipfile.is_zipfile(zip_path):
+                raise zipfile.BadZipFile("The downloaded file is not a valid ZIP archive.")
+        
         except requests.exceptions.RequestException as e:
             print(f"Error while downloading the models: {e}")
+            raise
+        except Exception as e:
+            print(f"Unexpected error during download: {e}")
             raise
 
         try:
             with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                 zip_ref.extractall(extract_to)
             print(f"Model extracted to: {extract_to}")
+        
         except zipfile.BadZipFile as e:
             print(f"Error while decompressing the model's ZIP: {e}")
             raise

@@ -203,6 +203,13 @@ class MicrogliaAnalyzer(object):
         self._log("Classification model path set to: " + str(self.classification_model_path))
         self._log("Classes found: " + str(self.class_names))
 
+    def get_model_path(self, identifier):
+        if identifier == "µnet":
+            return self.segmentation_model_path
+        if identifier == "µyolo":
+            return self.classification_model_path
+        raise ValueError("Unknown model identifier.")
+
     def _segmentation_inference(self):
         shape = self.image.shape
         tiles_manager = ImageTiler2D(_UNET_TILE, _UNET_OVERLAP, shape)
@@ -264,6 +271,10 @@ class MicrogliaAnalyzer(object):
         self.mask = label(self.mask, connectivity=2)
 
     def segment_microglia(self):
+        if self.image is None:
+            return
+        if self.segmentation_model_path is None:
+            raise ValueError("The segmentation model path is not set.")
         self._segmentation_inference()
         self._segmentation_postprocessing()
 
@@ -351,6 +362,10 @@ class MicrogliaAnalyzer(object):
         return version
 
     def classify_microglia(self):
+        if (self.image is None) or (self.mask is None):
+            return
+        if self.classification_model_path is None:
+            raise ValueError("The classification model path is not set.")
         self._classification_inference()
         self._classification_postprocessing()
 
