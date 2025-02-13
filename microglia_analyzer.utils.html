@@ -1,0 +1,221 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>microglia_analyzer.utils module &mdash; Microglia Analyzer 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=5b94cef0" />
+
+  
+    <link rel="shortcut icon" href="_static/icon.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Microglia Analyzer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">Quick start: A user guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="segmentation.html">Segmentation using a UNet2D</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classification.html">Classification using a YOLOv5</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measures.html">Measures on microglia</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Microglia Analyzer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">microglia_analyzer.utils module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/microglia_analyzer.utils.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-microglia_analyzer.utils">
+<span id="microglia-analyzer-utils-module"></span><h1>microglia_analyzer.utils module<a class="headerlink" href="#module-microglia_analyzer.utils" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="microglia_analyzer.utils.bindings_as_napari_shapes">
+<span class="sig-prename descclassname"><span class="pre">microglia_analyzer.utils.</span></span><span class="sig-name descname"><span class="pre">bindings_as_napari_shapes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bindings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/utils.html#bindings_as_napari_shapes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.utils.bindings_as_napari_shapes" title="Link to this definition"></a></dt>
+<dd><p>From the bindings, creates a list of rectangles and a list of colors following the format expected by Napari.
+Both lists have the same size.
+There is the possibility to exclude a class by its index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bindings</strong> (<em>-</em>) – List of bindings, each containing a class and a bounding-box: (cls, (y1, x1, y2, x2)).</p></li>
+<li><p><strong>exclude</strong> (<em>-</em>) – Class to be excluded.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of rectangles and list of colors.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(list, list)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="microglia_analyzer.utils.calculate_iou">
+<span class="sig-prename descclassname"><span class="pre">microglia_analyzer.utils.</span></span><span class="sig-name descname"><span class="pre">calculate_iou</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">box1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">box2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/utils.html#calculate_iou"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.utils.calculate_iou" title="Link to this definition"></a></dt>
+<dd><p>Calculate the Intersection over Union (IoU) between two bounding boxes.
+It is designed to work with the format [x1, y1, x2, y2] (Raw YOLO output).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>box1</strong> (<em>-</em>) – [x1, y1, x2, y2], coordinates of the first box.</p></li>
+<li><p><strong>box2</strong> (<em>-</em>) – [x1, y1, x2, y2], coordinates of the second box.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Intersection over Union, a value between 0 and 1.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="microglia_analyzer.utils.convert_hex_colors_to_bgr">
+<span class="sig-prename descclassname"><span class="pre">microglia_analyzer.utils.</span></span><span class="sig-name descname"><span class="pre">convert_hex_colors_to_bgr</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/utils.html#convert_hex_colors_to_bgr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.utils.convert_hex_colors_to_bgr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="microglia_analyzer.utils.download_from_web">
+<span class="sig-prename descclassname"><span class="pre">microglia_analyzer.utils.</span></span><span class="sig-name descname"><span class="pre">download_from_web</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extract_to</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/utils.html#download_from_web"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.utils.download_from_web" title="Link to this definition"></a></dt>
+<dd><p>This function is used to download and extract a ZIP file from the web.
+In this project, it is used to download the pre-trained models (for both the UNet and the YOLO).
+To get it working, the files must have been bundled at level-0.
+It means that when you create your archive, you must do it from inside the folder (Ctrl+A &gt; Compress), not from the parent folder itself.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>url</strong> (<em>-</em>) – URL of the ZIP file to download.</p></li>
+<li><p><strong>extract_to</strong> (<em>-</em>) – Parent folder where the ZIP file will be extracted.
+A new folder will be created inside.</p></li>
+<li><p><strong>timeout</strong> (<em>-</em>) – Maximum time to wait for the download (default=100).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="microglia_analyzer.utils.draw_bounding_boxes">
+<span class="sig-prename descclassname"><span class="pre">microglia_analyzer.utils.</span></span><span class="sig-name descname"><span class="pre">draw_bounding_boxes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bindings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/utils.html#draw_bounding_boxes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.utils.draw_bounding_boxes" title="Link to this definition"></a></dt>
+<dd><p>Draw bounding-boxes on an image.
+There is the possibility to exclude a class by its index.
+The output image is in BGR format and the modification is not performed in-place.</p>
+<p>Parameters:
+- image (np.array): Canvas on which the bounding-boxes will be drawn.
+- bindings ([(int, (int, int, int, int))]): List of bindings, each containing a class and a bounding-box: (cls, (y1, x1, y2, x2)).
+- class_names ([str]): List of class names.
+- exclude (int): Class to be excluded.
+- thickness (int): Thickness of the bounding-boxes outlines (default=2).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="microglia_analyzer.utils.generate_random_bindings">
+<span class="sig-prename descclassname"><span class="pre">microglia_analyzer.utils.</span></span><span class="sig-name descname"><span class="pre">generate_random_bindings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_bindings</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/utils.html#generate_random_bindings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.utils.generate_random_bindings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="microglia_analyzer.utils.get_all_tiff_files">
+<span class="sig-prename descclassname"><span class="pre">microglia_analyzer.utils.</span></span><span class="sig-name descname"><span class="pre">get_all_tiff_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_ext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/utils.html#get_all_tiff_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.utils.get_all_tiff_files" title="Link to this definition"></a></dt>
+<dd><p>Probes a folder and filters its content with a regex.
+All the TIFF are returned, whatever the number of ‘f’ or the case.
+If the <cite>no_ext</cite> attribute is True, the name is returned without the extension.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="microglia_analyzer.utils.hex_to_bgr">
+<span class="sig-prename descclassname"><span class="pre">microglia_analyzer.utils.</span></span><span class="sig-name descname"><span class="pre">hex_to_bgr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">color_hex</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/utils.html#hex_to_bgr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.utils.hex_to_bgr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="microglia_analyzer.utils.normalize_batch">
+<span class="sig-prename descclassname"><span class="pre">microglia_analyzer.utils.</span></span><span class="sig-name descname"><span class="pre">normalize_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/utils.html#normalize_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.utils.normalize_batch" title="Link to this definition"></a></dt>
+<dd><p>Performs a basic normalization (histogram stretching) on a batch of images.
+The normalization is done in place.
+The new data is in the range [0.0, 1.0].</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="microglia_analyzer.utils.save_as_fake_colors">
+<span class="sig-prename descclassname"><span class="pre">microglia_analyzer.utils.</span></span><span class="sig-name descname"><span class="pre">save_as_fake_colors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bindings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/utils.html#save_as_fake_colors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.utils.save_as_fake_colors" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Clément H. Benedetti.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

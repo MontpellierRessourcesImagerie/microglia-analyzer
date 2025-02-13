@@ -1,0 +1,7 @@
+microglia\_analyzer.utils module
+================================
+
+.. automodule:: microglia_analyzer.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,0 +1,383 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>microglia_analyzer.qt_workers &mdash; Microglia Analyzer 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=5b94cef0" />
+
+  
+    <link rel="shortcut icon" href="../../_static/icon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Microglia Analyzer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../user_guide.html">Quick start: A user guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../segmentation.html">Segmentation using a UNet2D</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../classification.html">Classification using a YOLOv5</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../measures.html">Measures on microglia</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Microglia Analyzer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">microglia_analyzer.qt_workers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for microglia_analyzer.qt_workers</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">QObject</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PyQt5.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyqtSignal</span><span class="p">,</span> <span class="n">pyqtSlot</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">microglia_analyzer.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">download_from_web</span><span class="p">,</span> <span class="n">get_all_tiff_files</span><span class="p">,</span>
+                                      <span class="n">save_as_fake_colors</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">microglia_analyzer.ma_worker</span><span class="w"> </span><span class="kn">import</span> <span class="n">MicrogliaAnalyzer</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tifffile</span>
+
+<span class="n">_MODELS</span> <span class="o">=</span> <span class="s2">&quot;https://raw.githubusercontent.com/MontpellierRessourcesImagerie/microglia-analyzer/refs/heads/main/src/microglia_analyzer/models.json&quot;</span>
+
+<div class="viewcode-block" id="QtVersionableDL">
+<a class="viewcode-back" href="../../microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtVersionableDL">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QtVersionableDL</span><span class="p">(</span><span class="n">QObject</span><span class="p">):</span>
+
+    <span class="n">finished</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">()</span>
+    <span class="n">update</span>   <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pbr</span><span class="p">,</span> <span class="n">mga</span><span class="p">,</span> <span class="n">idf</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tgt_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pbr</span> <span class="o">=</span> <span class="n">pbr</span> <span class="c1"># Progress bar</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mga</span> <span class="o">=</span> <span class="n">mga</span> <span class="c1"># Microglia analyzer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_path</span> <span class="o">=</span> <span class="n">tgt_path</span> <span class="c1"># Theoritical path to the model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">latest</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># The latest version of the model (from the online JSON).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_path</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># The actual path to the model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">identifier</span> <span class="o">=</span> <span class="n">idf</span> <span class="c1"># The identifier of the model (&#39;µnet&#39;, &#39;µyolo&#39;, etc.)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_version</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># The version of the model locally stored.</span>
+    
+<div class="viewcode-block" id="QtVersionableDL.run">
+<a class="viewcode-back" href="../../microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtVersionableDL.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_early_abort</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_seek_local_model</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fetch_versions</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_download_updates</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_run_model</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span></div>
+
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_early_abort</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mga</span><span class="o">.</span><span class="n">get_model_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">identifier</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">_</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid identifier: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">identifier</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_seek_local_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Checks if a model is present locally and sets the model_path attribute. &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_path</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">v_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_path</span><span class="p">,</span> <span class="s2">&quot;version.txt&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">v_path</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_path</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">v_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">local_version</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fetch_versions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Reads the JSON file from the URL and stores it in self.versions &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">versions</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_MODELS</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">versions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">latest</span> <span class="o">=</span> <span class="n">versions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">identifier</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">_</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Failed to fetch the latest models version.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">latest</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_download_updates</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_version</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latest</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Model &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&#39; is up to date.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">download_from_web</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latest</span><span class="p">[</span><span class="s1">&#39;url&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_path</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_path</span>
+        <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">_</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Failed to download the latest model.&quot;</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_run_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span></div>
+
+        
+
+<div class="viewcode-block" id="QtSegmentMicroglia">
+<a class="viewcode-back" href="../../microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtSegmentMicroglia">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QtSegmentMicroglia</span><span class="p">(</span><span class="n">QtVersionableDL</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pbr</span><span class="p">,</span> <span class="n">mga</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">pbr</span><span class="p">,</span> 
+            <span class="n">mga</span><span class="p">,</span>
+            <span class="s2">&quot;µnet&quot;</span><span class="p">,</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)),</span> <span class="s2">&quot;models&quot;</span><span class="p">,</span> <span class="s2">&quot;µnet&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_run_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mga</span><span class="o">.</span><span class="n">segmentation_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mga</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Segmenting microglia using the version </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">latest</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mga</span><span class="o">.</span><span class="n">set_segmentation_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mga</span><span class="o">.</span><span class="n">segment_microglia</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="QtClassifyMicroglia">
+<a class="viewcode-back" href="../../microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtClassifyMicroglia">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QtClassifyMicroglia</span><span class="p">(</span><span class="n">QtVersionableDL</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pbr</span><span class="p">,</span> <span class="n">mga</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">pbr</span><span class="p">,</span>
+            <span class="n">mga</span><span class="p">,</span>
+            <span class="s2">&quot;µyolo&quot;</span><span class="p">,</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)),</span> <span class="s2">&quot;models&quot;</span><span class="p">,</span> <span class="s2">&quot;µyolo&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_run_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mga</span><span class="o">.</span><span class="n">classification_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mga</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Classifying microglia using the version </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">latest</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mga</span><span class="o">.</span><span class="n">set_classification_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mga</span><span class="o">.</span><span class="n">classify_microglia</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="QtMeasureMicroglia">
+<a class="viewcode-back" href="../../microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtMeasureMicroglia">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QtMeasureMicroglia</span><span class="p">(</span><span class="n">QObject</span><span class="p">):</span>
+    
+    <span class="n">finished</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">()</span>
+    <span class="n">update</span>   <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pbr</span><span class="p">,</span> <span class="n">mga</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pbr</span> <span class="o">=</span> <span class="n">pbr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mga</span> <span class="o">=</span> <span class="n">mga</span>
+
+<div class="viewcode-block" id="QtMeasureMicroglia.run">
+<a class="viewcode-back" href="../../microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtMeasureMicroglia.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mga</span><span class="o">.</span><span class="n">analyze_graph</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span></div>
+</div>
+
+
+<div class="viewcode-block" id="QtBatchRunners">
+<a class="viewcode-back" href="../../microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QtBatchRunners</span><span class="p">(</span><span class="n">QObject</span><span class="p">):</span>
+    
+    <span class="n">finished</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">()</span>
+    <span class="n">update</span>   <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+    <span class="n">to_kill</span>  <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pbr</span><span class="p">,</span> <span class="n">source_dir</span><span class="p">,</span> <span class="n">settings</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">to_kill</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interupt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pbr</span> <span class="o">=</span> <span class="n">pbr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_dir</span> <span class="o">=</span> <span class="n">source_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span> <span class="o">=</span> <span class="n">settings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">images_pool</span> <span class="o">=</span> <span class="n">get_all_tiff_files</span><span class="p">(</span><span class="n">source_dir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tsv_lines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_condamned</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="QtBatchRunners.interupt">
+<a class="viewcode-back" href="../../microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.interupt">[docs]</a>
+    <span class="nd">@pyqtSlot</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interupt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_condamned</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="QtBatchRunners.workflow">
+<a class="viewcode-back" href="../../microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.workflow">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">workflow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="n">img_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">images_pool</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+        <span class="n">img_data</span> <span class="o">=</span> <span class="n">tifffile</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="n">img_path</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span>
+
+        <span class="n">mga</span> <span class="o">=</span> <span class="n">MicrogliaAnalyzer</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">mga</span><span class="o">.</span><span class="n">set_input_image</span><span class="p">(</span><span class="n">img_data</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="n">mga</span><span class="o">.</span><span class="n">set_calibration</span><span class="p">(</span><span class="o">*</span><span class="n">s</span><span class="p">[</span><span class="s1">&#39;calibration&#39;</span><span class="p">])</span>
+        <span class="n">mga</span><span class="o">.</span><span class="n">set_segmentation_model</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s1">&#39;unet_path&#39;</span><span class="p">])</span>
+        <span class="n">mga</span><span class="o">.</span><span class="n">set_classification_model</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s1">&#39;yolo_path&#39;</span><span class="p">])</span>
+        <span class="n">mga</span><span class="o">.</span><span class="n">set_min_surface</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s1">&#39;cc_min_size&#39;</span><span class="p">])</span>
+        <span class="n">mga</span><span class="o">.</span><span class="n">set_proba_threshold</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s1">&#39;proba_threshold&#39;</span><span class="p">])</span>
+        <span class="n">mga</span><span class="o">.</span><span class="n">segment_microglia</span><span class="p">()</span>
+        <span class="n">mga</span><span class="o">.</span><span class="n">classify_microglia</span><span class="p">()</span>
+        <span class="n">mga</span><span class="o">.</span><span class="n">analyze_graph</span><span class="p">()</span>
+
+        <span class="n">controls_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_dir</span><span class="p">,</span> <span class="s2">&quot;controls&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_csv</span><span class="p">(</span><span class="n">mga</span><span class="p">,</span> <span class="n">controls_folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">images_pool</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_mask</span><span class="p">(</span><span class="n">mga</span><span class="p">,</span> <span class="n">controls_folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">images_pool</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_skeleton</span><span class="p">(</span><span class="n">mga</span><span class="p">,</span> <span class="n">controls_folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">images_pool</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_classification</span><span class="p">(</span><span class="n">mga</span><span class="p">,</span> <span class="n">controls_folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">images_pool</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_visual_check</span><span class="p">(</span><span class="n">mga</span><span class="p">,</span> <span class="n">controls_folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">images_pool</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+
+        <span class="n">tsv</span> <span class="o">=</span> <span class="n">mga</span><span class="o">.</span><span class="n">as_tsv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images_pool</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tsv_lines</span> <span class="o">+=</span> <span class="n">tsv</span> <span class="k">if</span> <span class="p">(</span><span class="n">index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="n">tsv</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span></div>
+
+    
+<div class="viewcode-block" id="QtBatchRunners.write_tsv">
+<a class="viewcode-back" href="../../microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.write_tsv">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_tsv</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_dir</span><span class="p">,</span> <span class="s2">&quot;controls&quot;</span><span class="p">,</span> <span class="s2">&quot;results.csv&quot;</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tsv_lines</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="QtBatchRunners.run">
+<a class="viewcode-back" href="../../microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images_pool</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_condamned</span><span class="p">:</span>
+                <span class="k">return</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;=== [</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images_pool</span><span class="p">))</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">] Processing </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">images_pool</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">. ===&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">workflow</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_tsv</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images_pool</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images_pool</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="QtBatchRunners.write_csv">
+<a class="viewcode-back" href="../../microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.write_csv">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mga</span><span class="p">,</span> <span class="n">controls_folder</span><span class="p">,</span> <span class="n">img_name</span><span class="p">):</span>
+        <span class="n">measures_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">controls_folder</span><span class="p">,</span> <span class="s2">&quot;results&quot;</span><span class="p">)</span>
+        <span class="n">measure_path</span>  <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">measures_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">img_name</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;.csv&quot;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">measures_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">measures</span> <span class="o">=</span> <span class="n">mga</span><span class="o">.</span><span class="n">as_tsv</span><span class="p">(</span><span class="n">img_name</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">measure_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">measures</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="QtBatchRunners.write_mask">
+<a class="viewcode-back" href="../../microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.write_mask">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mga</span><span class="p">,</span> <span class="n">controls_folder</span><span class="p">,</span> <span class="n">img_name</span><span class="p">):</span>
+        <span class="n">masks_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">controls_folder</span><span class="p">,</span> <span class="s2">&quot;masks&quot;</span><span class="p">)</span>
+        <span class="n">mask_path</span>  <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">masks_path</span><span class="p">,</span> <span class="n">img_name</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">masks_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">tifffile</span><span class="o">.</span><span class="n">imwrite</span><span class="p">(</span><span class="n">mask_path</span><span class="p">,</span> <span class="n">mga</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="QtBatchRunners.write_visual_check">
+<a class="viewcode-back" href="../../microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.write_visual_check">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_visual_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mga</span><span class="p">,</span> <span class="n">controls_folder</span><span class="p">,</span> <span class="n">img_name</span><span class="p">):</span>
+        <span class="n">checks_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">controls_folder</span><span class="p">,</span> <span class="s2">&quot;checks&quot;</span><span class="p">)</span>
+        <span class="n">check_path</span>  <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">checks_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">img_name</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;.png&quot;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">checks_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">save_as_fake_colors</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">mga</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="p">(</span><span class="n">mga</span><span class="o">.</span><span class="n">skeleton</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span><span class="o">*</span><span class="mi">255</span><span class="p">],</span> 
+            <span class="n">mga</span><span class="o">.</span><span class="n">bindings</span><span class="p">,</span>
+            <span class="n">mga</span><span class="o">.</span><span class="n">class_names</span><span class="p">,</span>
+            <span class="n">check_path</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QtBatchRunners.write_skeleton">
+<a class="viewcode-back" href="../../microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.write_skeleton">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_skeleton</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mga</span><span class="p">,</span> <span class="n">controls_folder</span><span class="p">,</span> <span class="n">img_name</span><span class="p">):</span>
+        <span class="n">skeletons_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">controls_folder</span><span class="p">,</span> <span class="s2">&quot;skeletons&quot;</span><span class="p">)</span>
+        <span class="n">skeleton_path</span>  <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">skeletons_path</span><span class="p">,</span> <span class="n">img_name</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">skeletons_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">tifffile</span><span class="o">.</span><span class="n">imwrite</span><span class="p">(</span><span class="n">skeleton_path</span><span class="p">,</span> <span class="n">mga</span><span class="o">.</span><span class="n">skeleton</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QtBatchRunners.write_classification">
+<a class="viewcode-back" href="../../microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.write_classification">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_classification</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mga</span><span class="p">,</span> <span class="n">controls_folder</span><span class="p">,</span> <span class="n">img_name</span><span class="p">):</span>
+        <span class="n">classifications_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">controls_folder</span><span class="p">,</span> <span class="s2">&quot;classifications&quot;</span><span class="p">)</span>
+        <span class="n">classification_path</span>  <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">classifications_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">img_name</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;.txt&quot;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">classifications_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">classification_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">mga</span><span class="o">.</span><span class="n">bindings_to_yolo</span><span class="p">()]))</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Clément H. Benedetti.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

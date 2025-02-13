@@ -1,0 +1,7 @@
+microglia\_analyzer.qt\_workers module
+======================================
+
+.. automodule:: microglia_analyzer.qt_workers
+   :members:
+   :undoc-members:
+   :show-inheritance:

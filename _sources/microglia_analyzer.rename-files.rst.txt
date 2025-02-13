@@ -1,0 +1,7 @@
+microglia\_analyzer.rename\-files module
+========================================
+
+.. automodule:: microglia_analyzer.rename-files
+   :members:
+   :undoc-members:
+   :show-inheritance:

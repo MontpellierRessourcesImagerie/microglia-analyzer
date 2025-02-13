@@ -1,0 +1,272 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to use the “Microglia Analyzer” widget? &mdash; Microglia Analyzer 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=a5c4661c" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=5b94cef0" />
+
+  
+    <link rel="shortcut icon" href="_static/icon.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/tabs.js?v=3030b3cb"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Segmentation using a UNet2D" href="segmentation.html" />
+    <link rel="prev" title="Annotate your data for YOLO and UNet2D" href="annotate_patches.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Microglia Analyzer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="user_guide.html">Quick start: A user guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#introduction">1. Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#install-the-plugin">2. Install the plugin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#notes">3. Notes</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="user_guide.html#quick-start">4. Quick start</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="make_patches.html">Patches from calibrated images</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annotate_patches.html">Annotate your data for YOLO and UNet2D</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">How to use the “Microglia Analyzer” widget?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#get-your-data-ready">1. Get your data ready</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#workflow">2. Workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#examples-of-processed-data">3. Examples of processed data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#workflow-diagram">4. Workflow diagram</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="segmentation.html">Segmentation using a UNet2D</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classification.html">Classification using a YOLOv5</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measures.html">Measures on microglia</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Microglia Analyzer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="user_guide.html">Quick start: A user guide</a></li>
+      <li class="breadcrumb-item active">How to use the “Microglia Analyzer” widget?</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/mga_user_guide.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="how-to-use-the-microglia-analyzer-widget">
+<h1>How to use the “Microglia Analyzer” widget?<a class="headerlink" href="#how-to-use-the-microglia-analyzer-widget" title="Link to this heading"></a></h1>
+<section id="get-your-data-ready">
+<h2>1. Get your data ready<a class="headerlink" href="#get-your-data-ready" title="Link to this heading"></a></h2>
+<p>From this point, we will only consider that you are using the Napari plugin. If you are using the Python module, you can look at the “__main__” section of the “ma_worker.py” file.
+This Napari plugin expects your data to respect a precise format:</p>
+<ul class="simple">
+<li><p>The images must be available as dissociated TIFF images (no jpg, no 3D stack, no video, …).</p></li>
+<li><p>The files must have exactly 1 channel. We recommend to keep your images in 16-bits grayscale.</p></li>
+<li><p>All the images that you want to process at the same time must be in the same folder.</p></li>
+<li><p>Avoid using special characters in the folder’s name. (Tips: <a class="reference external" href="https://doranum.fr/stockage-archivage/comment-nommer-fichiers_10_13143_wgqw-aa59/">Doranum</a>)</p></li>
+<li><p>Both models used by this plugin were trained on images having a pixel size of 0.325 µm, you may have troubles if your images have a different pixel size.</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.
+├──<span class="w"> </span>📁<span class="w"> </span>my-awesome-experiment
+│<span class="w">   </span>├──<span class="w"> </span>some-image.tif
+│<span class="w">   </span>├──<span class="w"> </span>another-image.tif
+│<span class="w">   </span>├──<span class="w"> </span>...
+│<span class="w">   </span>└──<span class="w"> </span>last-image.tif
+</pre></div>
+</div>
+</section>
+<section id="workflow">
+<h2>2. Workflow<a class="headerlink" href="#workflow" title="Link to this heading"></a></h2>
+<section id="a-import-your-experiment-media-control">
+<h3>a. Import your experiment (Media control)<a class="headerlink" href="#a-import-your-experiment-media-control" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>In this section, you will import your experiment so you can visualize and analyze it.</p></li>
+<li><p>The <code class="code docutils literal notranslate"><span class="pre">Clear</span> <span class="pre">state</span></code> button is useless unless you just analyzed something else and need to reset the plugin.</p></li>
+<li><p>Use the <code class="code docutils literal notranslate"><span class="pre">Sources</span> <span class="pre">folder</span></code> button to provide the path to the folder containing your images. It is the path of “my-awesome-experiment” in the previous example.</p></li>
+<li><p>In the drop-down menu below, all the images of your folder should show up. Clicking on any of them in the list should display it in the main viewer.</p></li>
+<li><p>You can adjust the contrast and brightness in the upper-left corner of Napari.</p></li>
+</ul>
+</section>
+<section id="b-calibration-calibration">
+<h3>b. Calibration (Calibration)<a class="headerlink" href="#b-calibration-calibration" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Providing measures in physical units requires the plugin to know the size of a pixel.</p></li>
+<li><p>Just fill the number field with the size of a pixel and select the unit in the drop-down menu next to it before clicking the <code class="code docutils literal notranslate"><span class="pre">Apply</span> <span class="pre">calibration</span></code> button.</p></li>
+<li><p>If your image doesn’t appear in the viewer anymore, or if it becomes too small, you can click on the little “Home” button in the lower-left corner of Napari to center the view.</p></li>
+</ul>
+</section>
+<section id="c-segment-the-microglia-segmentation">
+<h3>c. Segment the microglia (Segmentation)<a class="headerlink" href="#c-segment-the-microglia-segmentation" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Setting</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Min area (µm²)</p></td>
+<td><p>Minimal area that an object must reach to avoid being discarded.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Min probability</p></td>
+<td><p>The raw output of the segmentation process is a probability map that must be thresholded to create a mask.</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p>You can set the “Min area” and the “Min probability” before or after the segmentation.</p></li>
+<li><p>You can just click the <code class="code docutils literal notranslate"><span class="pre">Segment</span> <span class="pre">microglia</span></code> button to start the segmentation.</p></li>
+<li><p>The first time, the model will have to be downloaded from internet.</p></li>
+</ul>
+</section>
+<section id="d-classify-the-microglia-classification">
+<h3>d. Classify the microglia (Classification)<a class="headerlink" href="#d-classify-the-microglia-classification" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Click the classify button.</p></li>
+<li><p>The model has to be downloaded from the internet the first time you use it.</p></li>
+<li><p>By the end of the process, the possible classes will show up below the <code class="code docutils literal notranslate"><span class="pre">Classify</span></code> button, with their associated color.</p></li>
+<li><p>Some elements are classified as “Garbage” (aggregated objects, out-of-focus, filaments from other slices, …) so you can use the <code class="code docutils literal notranslate"><span class="pre">Show</span> <span class="pre">garbage</span></code> checkbox to hide them.</p></li>
+<li><p>At this point, you must have each microglia surrounded by a colored box, representing its class.</p></li>
+</ul>
+</section>
+<section id="e-extract-measures-batch-measures">
+<h3>e. Extract measures + batch (Measures)<a class="headerlink" href="#e-extract-measures-batch-measures" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>If you click the <code class="code docutils literal notranslate"><span class="pre">Measure</span></code> button, the plugin will compute the skeleton of each non-garbage object and extract the measures mentioned in the introduction.</p></li>
+<li><p>A new folder named “controls” should appear in the folder containing your images. It should contain a CSV file named after your image as well as a control image.</p></li>
+<li><p>If everything looks fine, you can click the <code class="code docutils literal notranslate"><span class="pre">Run</span> <span class="pre">batch</span></code> button to run the whole workflow over the entire folder using the same settings you just used.</p></li>
+<li><p>The number of images left to process should be displayed on the button now named <code class="code docutils literal notranslate"><span class="pre">Stop</span> <span class="pre">batch</span></code>.</p></li>
+<li><p>By the end of the process, your “controls” folder should contain a control image for each input image, and a unique CSV file (“results.csv”) aggregating the measures of all the images.</p></li>
+</ul>
+</section>
+</section>
+<section id="examples-of-processed-data">
+<h2>3. Examples of processed data<a class="headerlink" href="#examples-of-processed-data" title="Link to this heading"></a></h2>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-0-0-0" aria-selected="true" class="sphinx-tabs-tab" id="tab-0-0-0" name="0-0" role="tab" tabindex="0">Input images</button><button aria-controls="panel-0-0-1" aria-selected="false" class="sphinx-tabs-tab" id="tab-0-0-1" name="0-1" role="tab" tabindex="-1">Segmented images</button><button aria-controls="panel-0-0-2" aria-selected="false" class="sphinx-tabs-tab" id="tab-0-0-2" name="0-2" role="tab" tabindex="-1">Classified images</button><button aria-controls="panel-0-0-3" aria-selected="false" class="sphinx-tabs-tab" id="tab-0-0-3" name="0-3" role="tab" tabindex="-1">Merged results</button></div><div aria-labelledby="tab-0-0-0" class="sphinx-tabs-panel" id="panel-0-0-0" name="0-0" role="tabpanel" tabindex="0"><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><a class="reference internal image-reference" href="_images/input-01.png"><img alt="_images/input-01.png" class="align-center" src="_images/input-01.png" style="width: 600px; height: 512px;" />
+</a>
+</td>
+<td><a class="reference internal image-reference" href="_images/input-02.png"><img alt="_images/input-02.png" class="align-center" src="_images/input-02.png" style="width: 600px; height: 512px;" />
+</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div><div aria-labelledby="tab-0-0-1" class="sphinx-tabs-panel" hidden="true" id="panel-0-0-1" name="0-1" role="tabpanel" tabindex="0"><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><a class="reference internal image-reference" href="_images/segmented-01.png"><img alt="_images/segmented-01.png" class="align-center" src="_images/segmented-01.png" style="width: 600px; height: 512px;" />
+</a>
+</td>
+<td><a class="reference internal image-reference" href="_images/segmented-02.png"><img alt="_images/segmented-02.png" class="align-center" src="_images/segmented-02.png" style="width: 600px; height: 512px;" />
+</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div><div aria-labelledby="tab-0-0-2" class="sphinx-tabs-panel" hidden="true" id="panel-0-0-2" name="0-2" role="tabpanel" tabindex="0"><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><a class="reference internal image-reference" href="_images/classified-01.png"><img alt="_images/classified-01.png" class="align-center" src="_images/classified-01.png" style="width: 600px; height: 512px;" />
+</a>
+</td>
+<td><a class="reference internal image-reference" href="_images/classified-02.png"><img alt="_images/classified-02.png" class="align-center" src="_images/classified-02.png" style="width: 600px; height: 512px;" />
+</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div><div aria-labelledby="tab-0-0-3" class="sphinx-tabs-panel" hidden="true" id="panel-0-0-3" name="0-3" role="tabpanel" tabindex="0"><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><a class="reference internal image-reference" href="_images/grouped-01.png"><img alt="_images/grouped-01.png" class="align-center" src="_images/grouped-01.png" style="width: 600px; height: 512px;" />
+</a>
+</td>
+<td><a class="reference internal image-reference" href="_images/grouped-02.png"><img alt="_images/grouped-02.png" class="align-center" src="_images/grouped-02.png" style="width: 600px; height: 512px;" />
+</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div></div>
+</section>
+<section id="workflow-diagram">
+<h2>4. Workflow diagram<a class="headerlink" href="#workflow-diagram" title="Link to this heading"></a></h2>
+<a class="reference external image-reference" href="https://dev.mri.cnrs.fr/attachments/download/3644/complete-workflow.png"><img alt="https://dev.mri.cnrs.fr/attachments/download/3644/complete-workflow.png" src="https://dev.mri.cnrs.fr/attachments/download/3644/complete-workflow.png" />
+</a>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="annotate_patches.html" class="btn btn-neutral float-left" title="Annotate your data for YOLO and UNet2D" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="segmentation.html" class="btn btn-neutral float-right" title="Segmentation using a UNet2D" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Clément H. Benedetti.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

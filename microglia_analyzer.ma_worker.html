@@ -1,0 +1,231 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>microglia_analyzer.ma_worker module &mdash; Microglia Analyzer 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=5b94cef0" />
+
+  
+    <link rel="shortcut icon" href="_static/icon.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Microglia Analyzer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">Quick start: A user guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="segmentation.html">Segmentation using a UNet2D</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classification.html">Classification using a YOLOv5</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measures.html">Measures on microglia</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Microglia Analyzer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">microglia_analyzer.ma_worker module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/microglia_analyzer.ma_worker.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-microglia_analyzer.ma_worker">
+<span id="microglia-analyzer-ma-worker-module"></span><h1>microglia_analyzer.ma_worker module<a class="headerlink" href="#module-microglia_analyzer.ma_worker" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">microglia_analyzer.ma_worker.</span></span><span class="sig-name descname"><span class="pre">MicrogliaAnalyzer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logging_f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.analyze_graph">
+<span class="sig-name descname"><span class="pre">analyze_graph</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.analyze_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.analyze_graph" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.as_tsv">
+<span class="sig-name descname"><span class="pre">as_tsv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">identifier</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.as_tsv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.as_tsv" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.bindings_from_yolo">
+<span class="sig-name descname"><span class="pre">bindings_from_yolo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yolo_bboxes_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.bindings_from_yolo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.bindings_from_yolo" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.bindings_to_yolo">
+<span class="sig-name descname"><span class="pre">bindings_to_yolo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.bindings_to_yolo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.bindings_to_yolo" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.classify_microglia">
+<span class="sig-name descname"><span class="pre">classify_microglia</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.classify_microglia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.classify_microglia" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.get_classification_version">
+<span class="sig-name descname"><span class="pre">get_classification_version</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.get_classification_version"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.get_classification_version" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.get_mask">
+<span class="sig-name descname"><span class="pre">get_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">show_garbage</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.get_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.get_mask" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.get_model_path">
+<span class="sig-name descname"><span class="pre">get_model_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">identifier</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.get_model_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.get_model_path" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.get_segmentation_version">
+<span class="sig-name descname"><span class="pre">get_segmentation_version</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.get_segmentation_version"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.get_segmentation_version" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.reset_classification">
+<span class="sig-name descname"><span class="pre">reset_classification</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.reset_classification"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.reset_classification" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.reset_segmentation">
+<span class="sig-name descname"><span class="pre">reset_segmentation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.reset_segmentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.reset_segmentation" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.segment_microglia">
+<span class="sig-name descname"><span class="pre">segment_microglia</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.segment_microglia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.segment_microglia" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_calibration">
+<span class="sig-name descname"><span class="pre">set_calibration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pixel_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.set_calibration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_calibration" title="Link to this definition"></a></dt>
+<dd><p>Setter of the calibration.
+Before editing the internal state, checks that the pixel size is a float and Pint is used to check the unit.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_classification_model">
+<span class="sig-name descname"><span class="pre">set_classification_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'best'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reload</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.set_classification_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_classification_model" title="Link to this definition"></a></dt>
+<dd><p>Checks that the path corresponds to a folder.
+This folder must contain a “confusion_matrix.png” file to verify that the training is complete.
+In there, there must be a “weights” folder, containing either ‘best.pt’ or ‘last.pt’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>-</em>) – Path of the model’s folder (containing ‘results.csv’ and ‘weights’).</p></li>
+<li><p><strong>use</strong> (<em>-</em>) – Either ‘best’ or ‘last’, to use either ‘best.pt’ or ‘last.pt’.</p></li>
+<li><p><strong>reload</strong> (<em>-</em>) – Whether to force the reload of the model from the online repo.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_input_image">
+<span class="sig-name descname"><span class="pre">set_input_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.set_input_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_input_image" title="Link to this definition"></a></dt>
+<dd><p>Setter of the input image.
+Checks that the image is 2D before using it.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_min_surface">
+<span class="sig-name descname"><span class="pre">set_min_surface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.set_min_surface"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_min_surface" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_proba_threshold">
+<span class="sig-name descname"><span class="pre">set_proba_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">threshold</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.set_proba_threshold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_proba_threshold" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_segmentation_model">
+<span class="sig-name descname"><span class="pre">set_segmentation_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'best'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.set_segmentation_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_segmentation_model" title="Link to this definition"></a></dt>
+<dd><p>Checks that the path is a folder.
+In the folder, we search for the file “best.keras” or “last.keras”.
+To verify that the training was complete, we also check for the presence of “training_history.png”.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_working_directory">
+<span class="sig-name descname"><span class="pre">set_working_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/ma_worker.html#MicrogliaAnalyzer.set_working_directory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_working_directory" title="Link to this definition"></a></dt>
+<dd><p>Checks that the directory exists before setting it.
+Also outputs a warning in the logs if it is not empty.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Clément H. Benedetti.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

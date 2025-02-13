@@ -1,0 +1,291 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Annotate your data for YOLO and UNet2D &mdash; Microglia Analyzer 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=5b94cef0" />
+
+  
+    <link rel="shortcut icon" href="_static/icon.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="How to use the “Microglia Analyzer” widget?" href="mga_user_guide.html" />
+    <link rel="prev" title="Patches from calibrated images" href="make_patches.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Microglia Analyzer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="user_guide.html">Quick start: A user guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#introduction">1. Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#install-the-plugin">2. Install the plugin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#notes">3. Notes</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="user_guide.html#quick-start">4. Quick start</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="make_patches.html">Patches from calibrated images</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Annotate your data for YOLO and UNet2D</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#prepare-your-data">1. Prepare your data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#initialize-the-widget">2. Initialize the widget</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#create-your-classes">3. Create your classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#annotate-your-data-for-yolo">4. Annotate your data for YOLO</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#annotate-your-data-for-unet">5. Annotate your data for UNet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#notes">Notes</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="mga_user_guide.html">How to use the “Microglia Analyzer” widget?</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="segmentation.html">Segmentation using a UNet2D</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classification.html">Classification using a YOLOv5</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measures.html">Measures on microglia</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Microglia Analyzer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="user_guide.html">Quick start: A user guide</a></li>
+      <li class="breadcrumb-item active">Annotate your data for YOLO and UNet2D</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/annotate_patches.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="annotate-your-data-for-yolo-and-unet2d">
+<h1>Annotate your data for YOLO and UNet2D<a class="headerlink" href="#annotate-your-data-for-yolo-and-unet2d" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p>The goal of this widget is to help you annotate your data for both the YOLO and the UNet models.</p></li>
+</ul>
+<dl class="simple">
+<dt>The YOLO architecture:</dt><dd><ul class="simple">
+<li><p>YOLO is a deep learning model that can detect objects.</p></li>
+<li><p>Detections are composed of bounding-boxes around objects.</p></li>
+<li><p>Each bounding-box will be given a class (amoeboid, intermediate, homeostatic or garbage).</p></li>
+</ul>
+</dd>
+<dt>The UNet architecture:</dt><dd><ul class="simple">
+<li><p>UNet is a deep learning model that can segment images.</p></li>
+<li><p>The output of the model is a probability map that must be thresholded to create a mask.</p></li>
+<li><p>In our case, it is optimized to create shapes that are suitable for skeletonization.</p></li>
+</ul>
+</dd>
+</dl>
+<ul class="simple">
+<li><p>To train the models, you need to provide a dataset of annotated images.</p></li>
+<li><p>Annotations are either hand-drawn masks for the UNet or bounding-boxes for the YOLO.</p></li>
+<li><p>The widget “Annotations helper” will help you to create this dataset.</p></li>
+</ul>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><img alt="_images/input-01.png" class="align-center" src="_images/input-01.png" />
+</td>
+<td><img alt="_images/segmented-01.png" class="align-center" src="_images/segmented-01.png" />
+</td>
+<td><img alt="_images/classified-01.png" class="align-center" src="_images/classified-01.png" />
+</td>
+</tr>
+<tr class="row-even"><td><p>Raw image</p></td>
+<td><p>Mask as produced by the UNet</p></td>
+<td><p>Bounding-boxes as produced by YOLO</p></td>
+</tr>
+</tbody>
+</table>
+<section id="prepare-your-data">
+<h2>1. Prepare your data<a class="headerlink" href="#prepare-your-data" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>First of all, the data that you will annotate must be correctly formatted.</p></li>
+<li><p>Your images must all be the same size in pixels.</p></li>
+<li><p>You can use TIF, PNG, JPG, … but no proprietary format (CZI, LIF, …).</p></li>
+<li><p>You can use the “Tiles creator” widget to create patches from your images. A common size is 512x512 pixels.</p></li>
+<li><p>All the images that you want to annotate must be in the same folder.</p></li>
+<li><p>Before you start, you should have a folder structure like this:</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>📁<span class="w"> </span>some-folder
+├──<span class="w"> </span>📁<span class="w"> </span>my-experiment
+│<span class="w">   </span>├──<span class="w"> </span><span class="m">14</span>-25-23.336.tif
+│<span class="w">   </span>├──<span class="w"> </span><span class="m">14</span>-25-23.379.tif
+│<span class="w">   </span>├──<span class="w"> </span>...
+│<span class="w">   </span>└──<span class="w"> </span><span class="m">14</span>-25-36.949.tif
+</pre></div>
+</div>
+</section>
+<section id="initialize-the-widget">
+<h2>2. Initialize the widget<a class="headerlink" href="#initialize-the-widget" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Open the widget located in: Plugins &gt; Microglia Analyzer &gt; Annotations helper.</p></li>
+<li><p>Click the <code class="code docutils literal notranslate"><span class="pre">Root</span> <span class="pre">folder</span></code> button and choose the folder named “some-folder” in the previous example. It is the parent folder of the folder containing your images.</p></li>
+<li><p>In the <code class="code docutils literal notranslate"><span class="pre">Inputs</span> <span class="pre">sub-folder</span></code> dropdown menu, choose the folder containing your images (named “my-experiment” in the previous example).</p></li>
+<li><p>The first image of your experiment will be displayed.</p></li>
+<li><p>You can navigate through the images using the dropdown menu in the “Annotations management” section.</p></li>
+<li><p>You can adjust the brightness and contrast of the image in the upper-left corner of Napari.</p></li>
+</ul>
+</section>
+<section id="create-your-classes">
+<h2>3. Create your classes<a class="headerlink" href="#create-your-classes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>The first thing to do is to create new classes. Each one corresponds to a different type of object that you want to detect.</p></li>
+<li><p>Simply fill the text field in the “Classes management” section and click the <code class="code docutils literal notranslate"><span class="pre">New</span> <span class="pre">class</span></code> button.</p></li>
+<li><p>A new layer should have appeared in the left column of Napari, named “class.xxx”, with “xxx” being the name of your class.</p></li>
+<li><p>You can add as many classes as you want.</p></li>
+</ul>
+</section>
+<section id="annotate-your-data-for-yolo">
+<h2>4. Annotate your data for YOLO<a class="headerlink" href="#annotate-your-data-for-yolo" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>To annotate an object, you have to draw a bounding-box around it. You must limit yourself to rectangles. Do not use ellipses or polygons or anything else.</p></li>
+<li><p>Choose the class for which you want to create annotations by clicking on its corresponding layer in the left column of Napari.</p></li>
+<li><p>You can choose the rectangle tool in the upper-left section of Napari’s window.</p></li>
+<li><p>Your boxes should contain the whole object and a few pixels around it.</p></li>
+<li><p>It is not a problem if the boxes overlap.</p></li>
+<li><p>If you failed to draw a box correctly, don’t edit it: delete it and draw a new one.</p></li>
+<li><p>If you don’t plan to annotate many images, you should really be careful not to forget any object on your images.</p></li>
+<li><p>When you are happy with the annotations you made, click the <code class="code docutils literal notranslate"><span class="pre">Save</span> <span class="pre">annotations</span></code> button in the “Annotations management” section.</p></li>
+<li><p>In the “Classes management” section, a table should have appeared to show you global statistics about your annotations.</p></li>
+<li><p>With the exception of your garbage class (if you have one), you should try to keep the number of annotations for each class balanced.</p></li>
+<li><p>A new folder with the “-labels” suffix should have appeared in the root folder. It contains the annotations you made as TXT files.</p></li>
+<li><p>A new file with the “-classes.txt” suffix should have appeared in the root folder. It contains the classes you created.</p></li>
+<li><p>Your files architecture should now look like this:</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>📁<span class="w"> </span>some-folder
+├──<span class="w"> </span>📁<span class="w"> </span>my-experiment
+│<span class="w">   </span>├──<span class="w"> </span><span class="m">14</span>-25-23.336.tif
+│<span class="w">   </span>├──<span class="w"> </span><span class="m">14</span>-25-23.379.tif
+│<span class="w">   </span>├──<span class="w"> </span>...
+│<span class="w">   </span>└──<span class="w"> </span><span class="m">14</span>-25-36.949.tif
+├──<span class="w"> </span>📁<span class="w"> </span>my-experiment-labels
+│<span class="w">   </span>├──<span class="w"> </span><span class="m">14</span>-25-23.336.txt
+│<span class="w">   </span>├──<span class="w"> </span><span class="m">14</span>-25-23.379.txt
+│<span class="w">   </span>├──<span class="w"> </span>...
+│<span class="w">   </span>└──<span class="w"> </span><span class="m">14</span>-25-36.949.txt
+├──<span class="w"> </span>📃<span class="w"> </span>my-experiment-classes.txt
+</pre></div>
+</div>
+</section>
+<section id="annotate-your-data-for-unet">
+<h2>5. Annotate your data for UNet<a class="headerlink" href="#annotate-your-data-for-unet" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>To annotate objects for UNet, avoid doing sparse annotations on your images. Each mask must be the exact representation of the object.</p></li>
+<li><p>For that, click on the <code class="code docutils literal notranslate"><span class="pre">Add</span> <span class="pre">mask</span></code> button in the “Masks” section.</p></li>
+<li><p>You just have to add it once, and it will automatically be added for all images.</p></li>
+<li><p>Use the brush and the eraser tools in the upper-left section of Napari’s window to draw and erase your masks.</p></li>
+<li><p>Once you are done, click the <code class="code docutils literal notranslate"><span class="pre">Save</span> <span class="pre">masks</span></code> button in the “Masks” section.</p></li>
+<li><p>The skeleton of your mask should appear, make sure that it is correct and doesn’t contain extra branches or holes. Otherwise, it is what your model will learn.</p></li>
+<li><p>Your files architecture should now look like this:</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>📁<span class="w"> </span>some-folder
+├──<span class="w"> </span>📁<span class="w"> </span>my-experiment
+│<span class="w">   </span>├──<span class="w"> </span><span class="m">14</span>-25-23.336.tif
+│<span class="w">   </span>├──<span class="w"> </span><span class="m">14</span>-25-23.379.tif
+│<span class="w">   </span>├──<span class="w"> </span>...
+│<span class="w">   </span>└──<span class="w"> </span><span class="m">14</span>-25-36.949.tif
+├──<span class="w"> </span>📁<span class="w"> </span>my-experiment-labels
+│<span class="w">   </span>├──<span class="w"> </span><span class="m">14</span>-25-23.336.txt
+│<span class="w">   </span>├──<span class="w"> </span><span class="m">14</span>-25-23.379.txt
+│<span class="w">   </span>├──<span class="w"> </span>...
+│<span class="w">   </span>└──<span class="w"> </span><span class="m">14</span>-25-36.949.txt
+├──<span class="w"> </span>📁<span class="w"> </span>my-experiment-masks
+│<span class="w">   </span>├──<span class="w"> </span><span class="m">14</span>-25-23.336.tif
+│<span class="w">   </span>├──<span class="w"> </span><span class="m">14</span>-25-23.379.tif
+│<span class="w">   </span>├──<span class="w"> </span>...
+│<span class="w">   </span>└──<span class="w"> </span><span class="m">14</span>-25-36.949.tif
+├──<span class="w"> </span>📃<span class="w"> </span>my-experiment-classes.txt
+</pre></div>
+</div>
+</section>
+<section id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>If you are working on RGB images, they will be converted to gray scale.</p></li>
+<li><p>If you already annotated some images, your annotations will be loaded when you open the widget.</p></li>
+<li><dl class="simple">
+<dt>In the “.txt” files generated for each image by the widget, the content is as follows:</dt><dd><ul>
+<li><p>[integer]: the class index (starting from 0).</p></li>
+<li><p>[float]: the x-coordinate of the center of the bounding-box, in percentage of the image width.</p></li>
+<li><p>[float]: the y-coordinate of the center of the bounding-box, in percentage of the image height.</p></li>
+<li><p>[float]: the width of the bounding-box, in percentage of the image width.</p></li>
+<li><p>[float]: the height of the bounding-box, in percentage of the image height.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="make_patches.html" class="btn btn-neutral float-left" title="Patches from calibrated images" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mga_user_guide.html" class="btn btn-neutral float-right" title="How to use the “Microglia Analyzer” widget?" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Clément H. Benedetti.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

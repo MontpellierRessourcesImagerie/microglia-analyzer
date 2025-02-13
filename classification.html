@@ -1,0 +1,266 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Classification using a YOLOv5 &mdash; Microglia Analyzer 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=5b94cef0" />
+
+  
+    <link rel="shortcut icon" href="_static/icon.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Measures on microglia" href="measures.html" />
+    <link rel="prev" title="Segmentation using a UNet2D" href="segmentation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Microglia Analyzer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">Quick start: A user guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="segmentation.html">Segmentation using a UNet2D</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Classification using a YOLOv5</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#get-your-data-ready">1. Get your data ready</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-augmentation">2. Data augmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#setup">3. Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bind-classification-to-segmentation">4. Bind classification to segmentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="measures.html">Measures on microglia</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Microglia Analyzer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Classification using a YOLOv5</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/classification.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="classification-using-a-yolov5">
+<h1>Classification using a YOLOv5<a class="headerlink" href="#classification-using-a-yolov5" title="Link to this heading"></a></h1>
+<section id="get-your-data-ready">
+<h2>1. Get your data ready<a class="headerlink" href="#get-your-data-ready" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>To train new YOLO models, you need the file <code class="code docutils literal notranslate"><span class="pre">src/dl/yolov5_training.py</span></code>. It contains the entire workflow to produce a bundled model ready for deployment.</p></li>
+<li><p>Before starting, create a folder named <code class="code docutils literal notranslate"><span class="pre">models</span></code> to store all the new model versions you create.</p></li>
+<li><p>You also need a <code class="code docutils literal notranslate"><span class="pre">working_dir</span></code> where the script will export its temporary data.</p></li>
+<li><dl class="simple">
+<dt>To train the YOLO model, you need two distinct folders. You can name them as you like.</dt><dd><ul>
+<li><p>The first folder, referred to as <code class="code docutils literal notranslate"><span class="pre">images</span></code>, will contain <code class="code docutils literal notranslate"><span class="pre">.png</span></code> images with values globally normalized in the range [0, 255].</p></li>
+<li><p>The second folder, referred to as <code class="code docutils literal notranslate"><span class="pre">labels</span></code>, will also contain <code class="code docutils literal notranslate"><span class="pre">.txt</span></code> files in which each line contains: C, X1, Y1, X2, Y2.</p></li>
+<li><p>The names in both folders should be the same with only the extension changing.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>The models produced by this script include:</dt><dd><ul>
+<li><p><code class="code docutils literal notranslate"><span class="pre">version.txt</span></code>: The version index of this model, allowing detection if the model should be re-downloaded from the internet.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">val_batch0_pred.jpg</span></code>: An overview of what the model predicted on an image from the validation set.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">val_batch0_labels.jpg</span></code>: The ground-truth of the image above.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">train_batchN.jpg</span></code>: A sample of N images and their labels (ground-truth) from the training-set.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">results.png</span></code>: Plot of metrics along the training (box loss, object loss, class loss, precision &amp; recall).</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">results.csv</span></code>: Actual values that were plotted in <code class="code docutils literal notranslate"><span class="pre">results.png</span></code>.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">R_curve.png</span></code>: Recall over epochs plotted.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">P_curve.png</span></code>: Precision over epochs plotted.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">PR_curve.png</span></code>: Precision against recall plotted.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">F1_curve.png</span></code>: F1 score over epochs.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">opt.yml</span></code>: Settings used to training the models.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">labels_correlogram.jpg</span></code>: Distribution of the bounding-boxes locations and dimensions.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">labels.jpg</span></code>: Distribution of the number of labels for each class, and their location in images.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">hyp.yaml</span></code>: Hyper-parameters used to train the model.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">confusion_matrix.png</span></code>: Confusion matrix (count per class of what was predicted vs. what was expected) of the created model on the validation set.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">weights</span></code>: A folder containing <code class="code docutils literal notranslate"><span class="pre">best.pt</span></code> and <code class="code docutils literal notranslate"><span class="pre">last.pt</span></code> which are the actual trained models.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</section>
+<section id="data-augmentation">
+<h2>2. Data augmentation<a class="headerlink" href="#data-augmentation" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>HSV-Hue Augmentation</strong>: The hue augmentation factor for HSV color space. Here, we work on gray scale images, so the provided value doesn’t matter.</p></li>
+<li><p><strong>HSV-Saturation Augmentation</strong>: The saturation augmentation factor for HSV color space.</p></li>
+<li><p><strong>HSV-Value Augmentation</strong>: The value augmentation factor for HSV color space. It was blocked to 0.01 to avoid making objects in the background visible.</p></li>
+<li><p><strong>Rotation Degrees</strong>: The maximum rotation degrees for data augmentation. Here, we allowed a range of 90° in either direction.</p></li>
+<li><p><strong>Translation</strong>: The maximum translation factor for data augmentation. Our objects can be anywhere on images, so we allowed a range of half the image size of each axis.</p></li>
+<li><p><strong>Scale</strong>: The scaling factor for data augmentation. The scale matters a lot to classify microglia, so it was locked to 1.0.</p></li>
+<li><p><strong>Vertical Flip Probability</strong>: The probability of performing a vertical flip during data augmentation.</p></li>
+<li><p><strong>Horizontal Flip Probability</strong>: The probability of performing a horizontal flip during data augmentation.</p></li>
+<li><p><strong>Mosaic Augmentation</strong>: The factor for mosaic data augmentation. To get more data, we create mosaics of inputs images to create <code class="code docutils literal notranslate"><span class="pre">new</span> <span class="pre">images</span></code>.</p></li>
+</ul>
+</section>
+<section id="setup">
+<h2>3. Setup<a class="headerlink" href="#setup" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Required to use YOLOv5m because there was not enough learning capacity with YOLOv5s</p></li>
+</ul>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head" rowspan="2"><p>Settings</p></th>
+<th class="head" rowspan="2"><p>Description</p></th>
+</tr>
+<tr class="row-even"></tr>
+</thead>
+<tbody>
+<tr class="row-odd"><td><p>data_folder</p></td>
+<td><p>Parent folder of the <code class="code docutils literal notranslate"><span class="pre">images</span></code> and <code class="code docutils literal notranslate"><span class="pre">labels</span></code> folders.</p></td>
+</tr>
+<tr class="row-even"><td><p>qc_folder</p></td>
+<td><p>Parent folder of the quality-control images (also <code class="code docutils literal notranslate"><span class="pre">images</span></code> and <code class="code docutils literal notranslate"><span class="pre">labels</span></code> folders).</p></td>
+</tr>
+<tr class="row-odd"><td><p>inputs_name</p></td>
+<td><p>Name of the folder containing the inputs images and the QC inputs.</p></td>
+</tr>
+<tr class="row-even"><td><p>annotations_name</p></td>
+<td><p>Name of the folder containing the labels for the training and QC.</p></td>
+</tr>
+<tr class="row-odd"><td><p>models_path</p></td>
+<td><p>Root of the folder in which models will be stored.</p></td>
+</tr>
+<tr class="row-even"><td><p>working_directory</p></td>
+<td><p>Directory in which the scripts creates its temporary data. Can be deleted after training.</p></td>
+</tr>
+<tr class="row-odd"><td><p>model_name_prefix</p></td>
+<td><p>Prefix that will be given to the folders containing newly created models.</p></td>
+</tr>
+<tr class="row-even"><td><p>reset_local_data</p></td>
+<td><p>Should the local set of images (== the data in the working directory) be reset at every training. Recommended.</p></td>
+</tr>
+<tr class="row-odd"><td><p>validation_percentage</p></td>
+<td><p>Percentage of the provided data that will be used for the validation step.</p></td>
+</tr>
+<tr class="row-even"><td><p>batch_size</p></td>
+<td><p>Number of images processed at the same time while training. Should be as high as your memory can handle.</p></td>
+</tr>
+<tr class="row-odd"><td><p>epochs</p></td>
+<td><p>Number of times that the whole data will be seen during training.</p></td>
+</tr>
+<tr class="row-even"><td><p>classes_names</p></td>
+<td><p>List of class names that should be predicted by the model being trained.</p></td>
+</tr>
+<tr class="row-odd"><td><p>optimizer</p></td>
+<td><p>Optimizer used for the gradient descent.</p></td>
+</tr>
+<tr class="row-even"><td><p>deterministic</p></td>
+<td><p>Should the inference be deterministic (one input always give the same output). Works by using a random seed if False.</p></td>
+</tr>
+<tr class="row-odd"><td><p>cos_lr</p></td>
+<td><p>Usually, the learning rate decreases as the epochs go. If True, it will rather follow a sinusoidal curve, starting on a maxima (hence the cosine)</p></td>
+</tr>
+<tr class="row-even"><td><p>label_smoothing</p></td>
+<td><p>Should the probability map of classes be smoothed (blurred) before building bounding boxes.</p></td>
+</tr>
+<tr class="row-odd"><td><p>dropout</p></td>
+<td><p>Percentage of neurons randomly disabled at each epoch to improve the generalization.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="bind-classification-to-segmentation">
+<h2>4. Bind classification to segmentation<a class="headerlink" href="#bind-classification-to-segmentation" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>By the end of the classification process, we have a set of bounding-boxes deduced by the model. Each box has a class (garbage, amoeboid, intermediate or homeostatic).</p></li>
+<li><p>In the previous step, we built masks representing microglia.</p></li>
+<li><p>However, at this point, there is no relation between the segmentation and the classification. We need to bind each item from the mask to a class.</p></li>
+<li><dl class="simple">
+<dt>To do that, a system of vote was implemented.</dt><dd><ul>
+<li><p>Each object starts with a set of N bins, with N being the number of classes. Along the process, each bin will count the number of votes for each class.</p></li>
+<li><p>For each bounding-box predicted by YOLO, we search the biggest object inside it, and designate it as the target.</p></li>
+<li><dl class="simple">
+<dt>In the target, the bin corresponding to the bounding-box’s class will receive P×S votes with:</dt><dd><ul>
+<li><p>P: The number of the target’s pixels in the bounding-box.</p></li>
+<li><p>S: The certainty score of the bounding-box.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>At the end, we take the majority vote for each object.</p></li>
+<li><p>An object with no vote is automatically declared garbage.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="segmentation.html" class="btn btn-neutral float-left" title="Segmentation using a UNet2D" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="measures.html" class="btn btn-neutral float-right" title="Measures on microglia" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Clément H. Benedetti.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

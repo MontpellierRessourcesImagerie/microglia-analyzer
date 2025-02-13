@@ -1,0 +1,7 @@
+microglia\_analyzer.ma\_worker module
+=====================================
+
+.. automodule:: microglia_analyzer.ma_worker
+   :members:
+   :undoc-members:
+   :show-inheritance:

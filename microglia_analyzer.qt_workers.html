@@ -1,0 +1,229 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>microglia_analyzer.qt_workers module &mdash; Microglia Analyzer 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=5b94cef0" />
+
+  
+    <link rel="shortcut icon" href="_static/icon.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Microglia Analyzer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">Quick start: A user guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="segmentation.html">Segmentation using a UNet2D</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classification.html">Classification using a YOLOv5</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measures.html">Measures on microglia</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Microglia Analyzer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">microglia_analyzer.qt_workers module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/microglia_analyzer.qt_workers.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-microglia_analyzer.qt_workers">
+<span id="microglia-analyzer-qt-workers-module"></span><h1>microglia_analyzer.qt_workers module<a class="headerlink" href="#module-microglia_analyzer.qt_workers" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtBatchRunners">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">microglia_analyzer.qt_workers.</span></span><span class="sig-name descname"><span class="pre">QtBatchRunners</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pbr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/qt_workers.html#QtBatchRunners"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.qt_workers.QtBatchRunners" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QObject</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtBatchRunners.finished">
+<span class="sig-name descname"><span class="pre">finished</span></span><a class="headerlink" href="#microglia_analyzer.qt_workers.QtBatchRunners.finished" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtBatchRunners.interupt">
+<span class="sig-name descname"><span class="pre">interupt</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/qt_workers.html#QtBatchRunners.interupt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.qt_workers.QtBatchRunners.interupt" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtBatchRunners.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/qt_workers.html#QtBatchRunners.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.qt_workers.QtBatchRunners.run" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtBatchRunners.to_kill">
+<span class="sig-name descname"><span class="pre">to_kill</span></span><a class="headerlink" href="#microglia_analyzer.qt_workers.QtBatchRunners.to_kill" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtBatchRunners.update">
+<span class="sig-name descname"><span class="pre">update</span></span><a class="headerlink" href="#microglia_analyzer.qt_workers.QtBatchRunners.update" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtBatchRunners.workflow">
+<span class="sig-name descname"><span class="pre">workflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/qt_workers.html#QtBatchRunners.workflow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.qt_workers.QtBatchRunners.workflow" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtBatchRunners.write_classification">
+<span class="sig-name descname"><span class="pre">write_classification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mga</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controls_folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/qt_workers.html#QtBatchRunners.write_classification"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.qt_workers.QtBatchRunners.write_classification" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtBatchRunners.write_csv">
+<span class="sig-name descname"><span class="pre">write_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mga</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controls_folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/qt_workers.html#QtBatchRunners.write_csv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.qt_workers.QtBatchRunners.write_csv" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtBatchRunners.write_mask">
+<span class="sig-name descname"><span class="pre">write_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mga</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controls_folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/qt_workers.html#QtBatchRunners.write_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.qt_workers.QtBatchRunners.write_mask" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtBatchRunners.write_skeleton">
+<span class="sig-name descname"><span class="pre">write_skeleton</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mga</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controls_folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/qt_workers.html#QtBatchRunners.write_skeleton"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.qt_workers.QtBatchRunners.write_skeleton" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtBatchRunners.write_tsv">
+<span class="sig-name descname"><span class="pre">write_tsv</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/qt_workers.html#QtBatchRunners.write_tsv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.qt_workers.QtBatchRunners.write_tsv" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtBatchRunners.write_visual_check">
+<span class="sig-name descname"><span class="pre">write_visual_check</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mga</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controls_folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/qt_workers.html#QtBatchRunners.write_visual_check"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.qt_workers.QtBatchRunners.write_visual_check" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtClassifyMicroglia">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">microglia_analyzer.qt_workers.</span></span><span class="sig-name descname"><span class="pre">QtClassifyMicroglia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pbr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mga</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/qt_workers.html#QtClassifyMicroglia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.qt_workers.QtClassifyMicroglia" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#microglia_analyzer.qt_workers.QtVersionableDL" title="microglia_analyzer.qt_workers.QtVersionableDL"><code class="xref py py-class docutils literal notranslate"><span class="pre">QtVersionableDL</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtMeasureMicroglia">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">microglia_analyzer.qt_workers.</span></span><span class="sig-name descname"><span class="pre">QtMeasureMicroglia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pbr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mga</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/qt_workers.html#QtMeasureMicroglia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.qt_workers.QtMeasureMicroglia" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QObject</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtMeasureMicroglia.finished">
+<span class="sig-name descname"><span class="pre">finished</span></span><a class="headerlink" href="#microglia_analyzer.qt_workers.QtMeasureMicroglia.finished" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtMeasureMicroglia.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/qt_workers.html#QtMeasureMicroglia.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.qt_workers.QtMeasureMicroglia.run" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtMeasureMicroglia.update">
+<span class="sig-name descname"><span class="pre">update</span></span><a class="headerlink" href="#microglia_analyzer.qt_workers.QtMeasureMicroglia.update" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtSegmentMicroglia">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">microglia_analyzer.qt_workers.</span></span><span class="sig-name descname"><span class="pre">QtSegmentMicroglia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pbr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mga</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/qt_workers.html#QtSegmentMicroglia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.qt_workers.QtSegmentMicroglia" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#microglia_analyzer.qt_workers.QtVersionableDL" title="microglia_analyzer.qt_workers.QtVersionableDL"><code class="xref py py-class docutils literal notranslate"><span class="pre">QtVersionableDL</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtVersionableDL">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">microglia_analyzer.qt_workers.</span></span><span class="sig-name descname"><span class="pre">QtVersionableDL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pbr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mga</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tgt_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/qt_workers.html#QtVersionableDL"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.qt_workers.QtVersionableDL" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QObject</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtVersionableDL.finished">
+<span class="sig-name descname"><span class="pre">finished</span></span><a class="headerlink" href="#microglia_analyzer.qt_workers.QtVersionableDL.finished" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtVersionableDL.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/qt_workers.html#QtVersionableDL.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.qt_workers.QtVersionableDL.run" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="microglia_analyzer.qt_workers.QtVersionableDL.update">
+<span class="sig-name descname"><span class="pre">update</span></span><a class="headerlink" href="#microglia_analyzer.qt_workers.QtVersionableDL.update" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Clément H. Benedetti.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

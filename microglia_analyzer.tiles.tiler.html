@@ -1,0 +1,222 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>microglia_analyzer.tiles.tiler module &mdash; Microglia Analyzer 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=5b94cef0" />
+
+  
+    <link rel="shortcut icon" href="_static/icon.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Microglia Analyzer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">Quick start: A user guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="segmentation.html">Segmentation using a UNet2D</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classification.html">Classification using a YOLOv5</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measures.html">Measures on microglia</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Microglia Analyzer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">microglia_analyzer.tiles.tiler module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/microglia_analyzer.tiles.tiler.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-microglia_analyzer.tiles.tiler">
+<span id="microglia-analyzer-tiles-tiler-module"></span><h1>microglia_analyzer.tiles.tiler module<a class="headerlink" href="#module-microglia_analyzer.tiles.tiler" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="microglia_analyzer.tiles.tiler.ImageTiler2D">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">microglia_analyzer.tiles.tiler.</span></span><span class="sig-name descname"><span class="pre">ImageTiler2D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blending</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gradient'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/tiles/tiler.html#ImageTiler2D"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.tiles.tiler.ImageTiler2D" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.tiles.tiler.ImageTiler2D.get_grid_size">
+<span class="sig-name descname"><span class="pre">get_grid_size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/tiles/tiler.html#ImageTiler2D.get_grid_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.tiles.tiler.ImageTiler2D.get_grid_size" title="Link to this definition"></a></dt>
+<dd><p>Returns the number of patches on each axis.
+It is a tuple (nY, nX).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.tiles.tiler.ImageTiler2D.get_layout">
+<span class="sig-name descname"><span class="pre">get_layout</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/tiles/tiler.html#ImageTiler2D.get_layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.tiles.tiler.ImageTiler2D.get_layout" title="Link to this definition"></a></dt>
+<dd><p>Returns the layout of the patches.
+It is a list of Patch2D objects.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.tiles.tiler.ImageTiler2D.image_to_tiles">
+<span class="sig-name descname"><span class="pre">image_to_tiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_normalize=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower_bound=0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper_bound=1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype=&lt;class</span> <span class="pre">'numpy.float32'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/tiles/tiler.html#ImageTiler2D.image_to_tiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.tiles.tiler.ImageTiler2D.image_to_tiles" title="Link to this definition"></a></dt>
+<dd><p>Takes an image and cuts it into tiles according to the layout processed for this shape.
+The image is not modified. Works with any number of channels.
+The produced tiles have the possibility to be normalized in any desired range.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> – (np.ndarray) Image to cut into patches.</p></li>
+<li><p><strong>use_normalize</strong> – (bool) Whether to normalize the image or not (not destructive).</p></li>
+<li><p><strong>lower_bound</strong> – (float) Lower bound of the normalization.</p></li>
+<li><p><strong>upper_bound</strong> – (float) Upper bound of the normalization.</p></li>
+<li><p><strong>dtype</strong> – (np.dtype) Type of the output tiles.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(list) List of patches (np.ndarray) cut from the image.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>patches</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="microglia_analyzer.tiles.tiler.ImageTiler2D.tiles_to_image">
+<span class="sig-name descname"><span class="pre">tiles_to_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patches</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/tiles/tiler.html#ImageTiler2D.tiles_to_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.tiles.tiler.ImageTiler2D.tiles_to_image" title="Link to this definition"></a></dt>
+<dd><p>Takes a list of tiles (images) and uses the coefs maps to fusion them into a single image with a smooth blending.
+The goal is to assemble them with seamless blending, respecting the overlap.
+The order in the list must match the order of the layout.
+Input patches are not modified. Works with any number of channels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>patches</strong> – (list) List of patches (np.ndarray) to merge.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(np.ndarray) Merged</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>canvas</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="microglia_analyzer.tiles.tiler.make_gradient_patch">
+<span class="sig-prename descclassname"><span class="pre">microglia_analyzer.tiles.tiler.</span></span><span class="sig-name descname"><span class="pre">make_gradient_patch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/tiles/tiler.html#make_gradient_patch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.tiles.tiler.make_gradient_patch" title="Link to this definition"></a></dt>
+<dd><p>Builds a patch containing coefficients between 0 and 1 so it can be used to merge patches.
+The area not included in the overlap is filled with 1s, while a linear gradient from 1 to 0 is applied to the overlap area.
+The direction of the gradient is defined by the direction parameter, respecting the following order: [0: LEFT, 1: BOTTOM, 2: RIGHT, 3: TOP]
+The provided <cite>patch_size</cite> is the final size of the patch, including the overlap.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patch_size</strong> – (int) Size of the patch (height and width), overlap included.</p></li>
+<li><p><strong>overlap</strong> – (int) Overlap between patches (in pixels).</p></li>
+<li><p><strong>direction</strong> – (int) Direction of the gradient. 0: LEFT, 1: BOTTOM, 2: RIGHT, 3: TOP</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(np.ndarray) Patch containing the coefficients.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>patch</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="microglia_analyzer.tiles.tiler.normalize">
+<span class="sig-prename descclassname"><span class="pre">microglia_analyzer.tiles.tiler.</span></span><span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower_bound=0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper_bound=1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype=&lt;class</span> <span class="pre">'numpy.float32'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/microglia_analyzer/tiles/tiler.html#normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#microglia_analyzer.tiles.tiler.normalize" title="Link to this definition"></a></dt>
+<dd><p>Normalizes the value of an image between <cite>lower_bound</cite> and <cite>upper_bound</cite>.
+Works whatever the number of channels.
+The normalization is not applied in place.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> – (np.ndarray) Image to normalize.</p></li>
+<li><p><strong>lower_bound</strong> – (float) Lower bound of the normalization.</p></li>
+<li><p><strong>upper_bound</strong> – (float) Upper bound of the normalization.</p></li>
+<li><p><strong>dtype</strong> – (np.dtype) Type of the output image.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(np.ndarray) Normalized image.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>img</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Clément H. Benedetti.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,246 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>microglia_analyzer package &mdash; Microglia Analyzer 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=5b94cef0" />
+
+  
+    <link rel="shortcut icon" href="_static/icon.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Microglia Analyzer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">Quick start: A user guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="segmentation.html">Segmentation using a UNet2D</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classification.html">Classification using a YOLOv5</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measures.html">Measures on microglia</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Microglia Analyzer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">microglia_analyzer package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/microglia_analyzer.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="microglia-analyzer-package">
+<h1>microglia_analyzer package<a class="headerlink" href="#microglia-analyzer-package" title="Link to this heading"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="microglia_analyzer.tiles.html">microglia_analyzer.tiles package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.tiles.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.tiles.patch.html">microglia_analyzer.tiles.patch module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="microglia_analyzer.tiles.patch.html#microglia_analyzer.tiles.patch.Patch2D"><code class="docutils literal notranslate"><span class="pre">Patch2D</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.tiles.plot.html">microglia_analyzer.tiles.plot module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="microglia_analyzer.tiles.plot.html#microglia_analyzer.tiles.plot.plot_patches_layout"><code class="docutils literal notranslate"><span class="pre">plot_patches_layout()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.tiles.recalibrate.html">microglia_analyzer.tiles.recalibrate module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="microglia_analyzer.tiles.recalibrate.html#microglia_analyzer.tiles.recalibrate.process_factor"><code class="docutils literal notranslate"><span class="pre">process_factor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="microglia_analyzer.tiles.recalibrate.html#microglia_analyzer.tiles.recalibrate.recalibrate_image"><code class="docutils literal notranslate"><span class="pre">recalibrate_image()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="microglia_analyzer.tiles.recalibrate.html#microglia_analyzer.tiles.recalibrate.recalibrate_shape"><code class="docutils literal notranslate"><span class="pre">recalibrate_shape()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.tiles.tiler.html">microglia_analyzer.tiles.tiler module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="microglia_analyzer.tiles.tiler.html#microglia_analyzer.tiles.tiler.ImageTiler2D"><code class="docutils literal notranslate"><span class="pre">ImageTiler2D</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="microglia_analyzer.tiles.tiler.html#microglia_analyzer.tiles.tiler.make_gradient_patch"><code class="docutils literal notranslate"><span class="pre">make_gradient_patch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="microglia_analyzer.tiles.tiler.html#microglia_analyzer.tiles.tiler.normalize"><code class="docutils literal notranslate"><span class="pre">normalize()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.tiles.html#module-microglia_analyzer.tiles">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="microglia_analyzer.custom_loss.html">microglia_analyzer.custom_loss module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.custom_loss.html#microglia_analyzer.custom_loss.compute_connected_components_penalty"><code class="docutils literal notranslate"><span class="pre">compute_connected_components_penalty()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.custom_loss.html#microglia_analyzer.custom_loss.compute_skeleton_reward"><code class="docutils literal notranslate"><span class="pre">compute_skeleton_reward()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.custom_loss.html#microglia_analyzer.custom_loss.custom_loss"><code class="docutils literal notranslate"><span class="pre">custom_loss()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.custom_loss.html#microglia_analyzer.custom_loss.dice_loss_function"><code class="docutils literal notranslate"><span class="pre">dice_loss_function()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="microglia_analyzer.ma_worker.html">microglia_analyzer.ma_worker module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.analyze_graph"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.analyze_graph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.as_tsv"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.as_tsv()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.bindings_from_yolo"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.bindings_from_yolo()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.bindings_to_yolo"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.bindings_to_yolo()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.classify_microglia"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.classify_microglia()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.get_classification_version"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.get_classification_version()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.get_mask"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.get_mask()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.get_model_path"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.get_model_path()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.get_segmentation_version"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.get_segmentation_version()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.reset_classification"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.reset_classification()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.reset_segmentation"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.reset_segmentation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.segment_microglia"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.segment_microglia()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_calibration"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.set_calibration()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_classification_model"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.set_classification_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_input_image"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.set_input_image()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_min_surface"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.set_min_surface()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_proba_threshold"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.set_proba_threshold()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_segmentation_model"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.set_segmentation_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.ma_worker.html#microglia_analyzer.ma_worker.MicrogliaAnalyzer.set_working_directory"><code class="docutils literal notranslate"><span class="pre">MicrogliaAnalyzer.set_working_directory()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="microglia_analyzer.qt_workers.html">microglia_analyzer.qt_workers module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners"><code class="docutils literal notranslate"><span class="pre">QtBatchRunners</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.finished"><code class="docutils literal notranslate"><span class="pre">QtBatchRunners.finished</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.interupt"><code class="docutils literal notranslate"><span class="pre">QtBatchRunners.interupt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.run"><code class="docutils literal notranslate"><span class="pre">QtBatchRunners.run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.to_kill"><code class="docutils literal notranslate"><span class="pre">QtBatchRunners.to_kill</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.update"><code class="docutils literal notranslate"><span class="pre">QtBatchRunners.update</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.workflow"><code class="docutils literal notranslate"><span class="pre">QtBatchRunners.workflow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.write_classification"><code class="docutils literal notranslate"><span class="pre">QtBatchRunners.write_classification()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.write_csv"><code class="docutils literal notranslate"><span class="pre">QtBatchRunners.write_csv()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.write_mask"><code class="docutils literal notranslate"><span class="pre">QtBatchRunners.write_mask()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.write_skeleton"><code class="docutils literal notranslate"><span class="pre">QtBatchRunners.write_skeleton()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.write_tsv"><code class="docutils literal notranslate"><span class="pre">QtBatchRunners.write_tsv()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtBatchRunners.write_visual_check"><code class="docutils literal notranslate"><span class="pre">QtBatchRunners.write_visual_check()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtClassifyMicroglia"><code class="docutils literal notranslate"><span class="pre">QtClassifyMicroglia</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtMeasureMicroglia"><code class="docutils literal notranslate"><span class="pre">QtMeasureMicroglia</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtMeasureMicroglia.finished"><code class="docutils literal notranslate"><span class="pre">QtMeasureMicroglia.finished</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtMeasureMicroglia.run"><code class="docutils literal notranslate"><span class="pre">QtMeasureMicroglia.run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtMeasureMicroglia.update"><code class="docutils literal notranslate"><span class="pre">QtMeasureMicroglia.update</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtSegmentMicroglia"><code class="docutils literal notranslate"><span class="pre">QtSegmentMicroglia</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtVersionableDL"><code class="docutils literal notranslate"><span class="pre">QtVersionableDL</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtVersionableDL.finished"><code class="docutils literal notranslate"><span class="pre">QtVersionableDL.finished</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtVersionableDL.run"><code class="docutils literal notranslate"><span class="pre">QtVersionableDL.run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.qt_workers.html#microglia_analyzer.qt_workers.QtVersionableDL.update"><code class="docutils literal notranslate"><span class="pre">QtVersionableDL.update</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="microglia_analyzer.rename-files.html">microglia_analyzer.rename-files module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="microglia_analyzer.unet_worker.html">microglia_analyzer.unet_worker module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.unet_worker.html#microglia_analyzer.unet_worker.UNetWorker"><code class="docutils literal notranslate"><span class="pre">UNetWorker</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="microglia_analyzer.unet_worker.html#microglia_analyzer.unet_worker.UNetWorker.inference"><code class="docutils literal notranslate"><span class="pre">UNetWorker.inference()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="microglia_analyzer.utils.html">microglia_analyzer.utils module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.utils.html#microglia_analyzer.utils.bindings_as_napari_shapes"><code class="docutils literal notranslate"><span class="pre">bindings_as_napari_shapes()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.utils.html#microglia_analyzer.utils.calculate_iou"><code class="docutils literal notranslate"><span class="pre">calculate_iou()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.utils.html#microglia_analyzer.utils.convert_hex_colors_to_bgr"><code class="docutils literal notranslate"><span class="pre">convert_hex_colors_to_bgr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.utils.html#microglia_analyzer.utils.download_from_web"><code class="docutils literal notranslate"><span class="pre">download_from_web()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.utils.html#microglia_analyzer.utils.draw_bounding_boxes"><code class="docutils literal notranslate"><span class="pre">draw_bounding_boxes()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.utils.html#microglia_analyzer.utils.generate_random_bindings"><code class="docutils literal notranslate"><span class="pre">generate_random_bindings()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.utils.html#microglia_analyzer.utils.get_all_tiff_files"><code class="docutils literal notranslate"><span class="pre">get_all_tiff_files()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.utils.html#microglia_analyzer.utils.hex_to_bgr"><code class="docutils literal notranslate"><span class="pre">hex_to_bgr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.utils.html#microglia_analyzer.utils.normalize_batch"><code class="docutils literal notranslate"><span class="pre">normalize_batch()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="microglia_analyzer.utils.html#microglia_analyzer.utils.save_as_fake_colors"><code class="docutils literal notranslate"><span class="pre">save_as_fake_colors()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="module-microglia_analyzer">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-microglia_analyzer" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="microglia_analyzer.TIFF_REGEX">
+<span class="sig-prename descclassname"><span class="pre">microglia_analyzer.</span></span><span class="sig-name descname"><span class="pre">TIFF_REGEX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('(.+)\\.tiff?',</span> <span class="pre">re.IGNORECASE)</span></em><a class="headerlink" href="#microglia_analyzer.TIFF_REGEX" title="Link to this definition"></a></dt>
+<dd><p>The networks used in this package (A 2D UNet and a YOLOv5) rely on images that have a pixel size of 0.325 µm.
+Images with a different pixel size will be resized to artificially have a pixel size of 0.325 µm.
+It is from these resized images that we will extract the patches.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Clément H. Benedetti.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

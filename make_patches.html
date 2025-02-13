@@ -1,0 +1,299 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patches from calibrated images &mdash; Microglia Analyzer 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=5b94cef0" />
+
+  
+    <link rel="shortcut icon" href="_static/icon.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Annotate your data for YOLO and UNet2D" href="annotate_patches.html" />
+    <link rel="prev" title="Quick start: A user guide" href="user_guide.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Microglia Analyzer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="user_guide.html">Quick start: A user guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#introduction">1. Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#install-the-plugin">2. Install the plugin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#notes">3. Notes</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="user_guide.html#quick-start">4. Quick start</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Patches from calibrated images</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#open-your-images-media-control">1. Open your images (Media control)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#recalibration-calibration">2. Recalibration (Calibration)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#normalize-the-values-normalization">3. Normalize the values (Normalization)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tiles-settings-tiles-configuration">4. Tiles Settings (Tiles Configuration)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#export-the-patches-export-configuration">5. Export the patches (Export Configuration)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="annotate_patches.html">Annotate your data for YOLO and UNet2D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mga_user_guide.html">How to use the “Microglia Analyzer” widget?</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="segmentation.html">Segmentation using a UNet2D</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classification.html">Classification using a YOLOv5</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measures.html">Measures on microglia</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Microglia Analyzer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="user_guide.html">Quick start: A user guide</a></li>
+      <li class="breadcrumb-item active">Patches from calibrated images</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/make_patches.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="patches-from-calibrated-images">
+<h1>Patches from calibrated images<a class="headerlink" href="#patches-from-calibrated-images" title="Link to this heading"></a></h1>
+<p>Whether it is for the segmentation (UNet2D) or the classification (YOLOv5), the models use patches of 512×512 pixels as inputs.
+As a model expects an input of a precise size, cutting images allows to accept images of any size.
+Also, a model taking a whole image as input would be too slow and would require too much memory.
+In this section, we will explain how to cut your images in patches if you ever need to retrain either model.</p>
+<p>⚠️ Note that cutting patches manually is only required if you want to retrain the models. If you just want to use the plugin, you can skip this section. Cutting and merging patches is done automatically by the plugin.</p>
+<p>Before starting, you should have all the images that you want to cut in the same folder.
+At this point, you can open the widget: Microglia Analyzer &gt; Tiles Creator.</p>
+<section id="open-your-images-media-control">
+<h2>1. Open your images (Media control)<a class="headerlink" href="#open-your-images-media-control" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>The first step is to click on the <code class="code docutils literal notranslate"><span class="pre">Load</span></code> button and navigate to the folder containing your images.</p></li>
+<li><p>You can get a global overview of your images by clicking on the <code class="code docutils literal notranslate"><span class="pre">Show</span> <span class="pre">sample</span></code> button. It will take up to 25 random elements and assemble them into a mosaic.</p></li>
+<li><p>The number of images detected in the folder should be displayed in the “sources” field.</p></li>
+<li><p>If all images have the same size, the “Shape” field should display it.</p></li>
+</ul>
+</section>
+<section id="recalibration-calibration">
+<h2>2. Recalibration (Calibration)<a class="headerlink" href="#recalibration-calibration" title="Link to this heading"></a></h2>
+<p>Models are usually made to work with images having a given pixel size.
+For example, the current models were trained to work with images having a pixel size of 0.325 µm.
+If your images have a different pixel size, you can still find a way around this problem by artificially changing the pixel size of your images.
+It simply consists in scaling your images so that they have the same pixel size as the one the model was trained on.</p>
+<table class="docutils align-center" id="id1">
+<caption><span class="caption-text">An object of 20µm of diameter with different pixel sizes</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<tbody>
+<tr class="row-odd"><td><a class="reference internal image-reference" href="_images/calibration-1.png"><img alt="_images/calibration-1.png" class="align-center" src="_images/calibration-1.png" style="width: 250px; height: 250px;" />
+</a>
+</td>
+<td><a class="reference internal image-reference" href="_images/calibration-1-psize0_9.png"><img alt="_images/calibration-1-psize0_9.png" class="align-center" src="_images/calibration-1-psize0_9.png" style="width: 250px; height: 250px;" />
+</a>
+</td>
+<td><a class="reference internal image-reference" href="_images/calibration-1-psize0_65.png"><img alt="_images/calibration-1-psize0_65.png" class="align-center" src="_images/calibration-1-psize0_65.png" style="width: 250px; height: 250px;" />
+</a>
+</td>
+</tr>
+<tr class="row-even"><td><p>The object is always 20µm of diameter</p></td>
+<td><p>Pixel size = 0.9µm</p></td>
+<td><p>Pixel size = 0.65µm</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="normalize-the-values-normalization">
+<h2>3. Normalize the values (Normalization)<a class="headerlink" href="#normalize-the-values-normalization" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Inference relies on the values contained in the images. If your first batch of images have a range of 279-56363 and the second one 0-1, the model will not be able to make any sense of it.</p></li>
+<li><p>The goal of this step is to make sure that all images have the same range of values.</p></li>
+<li><p>Also, models usually deal better with small values rather than huge ones.</p></li>
+<li><p>Our goal here will be to make our batches of images more uniform for the models to have the same “reaction” to them.</p></li>
+<li><p>For a quicker explanation, from now on, we will say that we want to normalize the images between 0 and 1 on 32-bits.</p></li>
+<li><p>The normalization here is based on “histogram stretching”, it means that the minimal and maximal values found will be bound to 0 and 1 respectively. The values in between will be stretched accordingly.</p></li>
+</ul>
+<section id="a-type-of-normalization">
+<h3>a. Type of normalization<a class="headerlink" href="#a-type-of-normalization" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>The patches can be either normalized locally or globally.</p></li>
+<li><p>In the case of local normalization, the minimal and maximal values will be computed for each patch. So even a patch containing only noise will have its values stretched between 0 and 1. It will increase the importance of noise.</p></li>
+<li><p>In the case of global normalization, the minimal and maximal values will be computed for the whole image. So a region containing only low values will remain an area of low values after stretching, compared to other regions.</p></li>
+</ul>
+<table class="docutils align-center" id="id2">
+<caption><span class="caption-text">Two patches of the same regions with local vs. global normalization</span><a class="headerlink" href="#id2" title="Link to this table"></a></caption>
+<tbody>
+<tr class="row-odd"><td><img alt="_images/input.png" class="align-center" src="_images/input.png" />
+</td>
+<td><img alt="_images/global-noise.png" class="align-center" src="_images/global-noise.png" />
+</td>
+<td><img alt="_images/local-noise.png" class="align-center" src="_images/local-noise.png" />
+</td>
+</tr>
+<tr class="row-even"><td><p>Image on 16-bits with value in the range 662-62333</p></td>
+<td><p>GLOBAL normalization: The first with values in 0.0-1.0 and the other in 0.0-0.04</p></td>
+<td><p>LOCAL normalization: The first with values in 0.0-1.0 and the other in 0.0-1.0</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="b-target-bounds">
+<h3>b. Target bounds<a class="headerlink" href="#b-target-bounds" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>The target bounds are the values that will be used to stretch the values.</p></li>
+<li><p>It will most likely be between 0 and 1, but you can choose any other range if you want.</p></li>
+</ul>
+</section>
+<section id="c-output-type">
+<h3>c. Output type<a class="headerlink" href="#c-output-type" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Depending on your target bounds, the values of the final image will be constrained to a certain type of data.</p></li>
+<li><dl class="simple">
+<dt>For example:</dt><dd><ul>
+<li><p>If you need to export your values between 0.0 and 1.0, you can only use the <code class="code docutils literal notranslate"><span class="pre">float32</span></code> type.</p></li>
+<li><p>If you need to export your values between 0 and 255, you can use the <code class="code docutils literal notranslate"><span class="pre">uint8</span></code>, <code class="code docutils literal notranslate"><span class="pre">uint16</span></code> or <code class="code docutils literal notranslate"><span class="pre">float32</span></code> types.</p></li>
+<li><p>If you need to export your values between 0 and 65535, you can use the <code class="code docutils literal notranslate"><span class="pre">uint16</span></code> or <code class="code docutils literal notranslate"><span class="pre">float32</span></code> types.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</section>
+<section id="d-output-format">
+<h3>d. Output format<a class="headerlink" href="#d-output-format" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Depending on where you want to use your patches, and the data-type of your patches, you will have to use a certain file-format.</p></li>
+<li><dl class="simple">
+<dt>For example:</dt><dd><ul>
+<li><p>You can use any file format to store <code class="code docutils literal notranslate"><span class="pre">uint8</span></code> data.</p></li>
+<li><p>You can use <code class="code docutils literal notranslate"><span class="pre">.tif</span></code> to store any type of data.</p></li>
+<li><p>You can use <code class="code docutils literal notranslate"><span class="pre">.jpg</span></code> to store <code class="code docutils literal notranslate"><span class="pre">uint8</span></code> data (even though you should never use this file format except to make images for your slides or presentations).</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</section>
+<section id="e-conclusion">
+<h3>e. Conclusion<a class="headerlink" href="#e-conclusion" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>If you need to retrain your UNet, you need to export patches as <code class="code docutils literal notranslate"><span class="pre">float32</span></code> in <code class="code docutils literal notranslate"><span class="pre">.tif</span></code> format, between 0.0 and 1.0.</p></li>
+<li><p>If you need to retrain your YOLO, you need to export patches as <code class="code docutils literal notranslate"><span class="pre">uint8</span></code> in <code class="code docutils literal notranslate"><span class="pre">.png</span></code> format, between 0 and 255.</p></li>
+</ul>
+</section>
+</section>
+<section id="tiles-settings-tiles-configuration">
+<h2>4. Tiles Settings (Tiles Configuration)<a class="headerlink" href="#tiles-settings-tiles-configuration" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Our goal will be to cut our images in tiles having all the same size, so the models can get a fixed-size input.</p></li>
+<li><p>The size of the tiles is set to 512×512 pixels by default because it is the size we used to train both our models.</p></li>
+<li><p>Another setting is the overlap between tiles. It is set to 128 by default. It means that each tile will overlap the previous one by 128 pixels. It is very important in the case of filamentous structures as the lack of continuous context could create cuts in the structures (see example below).</p></li>
+</ul>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><img alt="_images/proba-no-overlap.png" class="align-center" src="_images/proba-no-overlap.png" />
+</td>
+<td><img alt="_images/mask-no-overlap.png" class="align-center" src="_images/mask-no-overlap.png" />
+</td>
+</tr>
+<tr class="row-even"><td><p>Probability map of segmented patches without overlap</p></td>
+<td><p>Mask of segmented patches without overlap</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p>The overlap is automatically increased if the tiles are too close to the border of the image, to reach 512×512 pixels patches. The overlap is only increased on the last patches in this case.</p></li>
+<li><p>Right below, you can observe the way patches are cut with overlap.</p></li>
+</ul>
+<a class="reference internal image-reference" href="_images/all-tiles.gif"><img alt="_images/all-tiles.gif" class="align-center" src="_images/all-tiles.gif" style="height: 512px;" />
+</a>
+<ul class="simple">
+<li><p>You can now click on the <code class="code docutils literal notranslate"><span class="pre">Preview</span> <span class="pre">tiles</span></code> button to get a preview of the cutting pattern on an image from your folder.</p></li>
+<li><p>You can use the slider below to see the different patches one by one.</p></li>
+<li><p>Alternatively, you can use the checkbox “Show all tiles” to see all the patches at once.</p></li>
+</ul>
+</section>
+<section id="export-the-patches-export-configuration">
+<h2>5. Export the patches (Export Configuration)<a class="headerlink" href="#export-the-patches-export-configuration" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><dl class="simple">
+<dt>In this block, you have only 3 buttons:</dt><dd><ul>
+<li><p><code class="code docutils literal notranslate"><span class="pre">Select</span> <span class="pre">export</span> <span class="pre">folder</span></code> will ask you for an empty folder into which the patches will be exported.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">Empty</span> <span class="pre">export</span> <span class="pre">folder</span></code> to remove everything present in the folder you selected.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">Export</span> <span class="pre">tiles</span></code> to launch the conversion of all the images from your input folder to patches in the output folder.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="user_guide.html" class="btn btn-neutral float-left" title="Quick start: A user guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="annotate_patches.html" class="btn btn-neutral float-right" title="Annotate your data for YOLO and UNet2D" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Clément H. Benedetti.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
