@@ -95,7 +95,7 @@ class scaling: # namespace
             return resize(
                 data, 
                 new_shape, 
-                order=1 if inter else 0,
+                order=3 if inter else 0,
                 preserve_range=True,
                 anti_aliasing=False
             )
@@ -119,7 +119,7 @@ class scaling: # namespace
             return resize(
                 data, 
                 new_shape, 
-                order=1 if inter else 0,
+                order=3 if inter else 0,
                 preserve_range=True,
                 anti_aliasing=False
             )
@@ -141,7 +141,17 @@ class scaling: # namespace
         return resize(
             data, 
             shape, 
-            order=1 if inter else 0,
+            order=3 if inter else 0,
             preserve_range=True,
             anti_aliasing=False
         )
+
+
+if __name__ == "__main__":
+    import tifffile
+    input = "/home/benedetti/Documents/projects/2060-microglia/data/2025-04-11-calibration-debug/Snap-1272 contro.tiff"
+    output = "/home/benedetti/Documents/projects/2060-microglia/data/2025-04-11-calibration-debug/scaled-python.tif"
+    imin = tifffile.imread(input)
+    imscaled = scaling.from_calibration.ori2net(imin, 172.5, "nm")
+    imscaled = scaling.from_shape(imscaled, imin.shape)
+    tifffile.imwrite(output, imscaled)

@@ -12,9 +12,8 @@ from skimage import morphology
 from skimage.morphology import skeletonize
 from skan import Skeleton, summarize
 
-from microglia_analyzer.tiles.tiler import normalize
-from microglia_analyzer.utils import calculate_iou, normalize_batch
-from microglia_analyzer.tiles.tiler import ImageTiler2D
+from microglia_analyzer.tiles.tiler import normalize, ImageTiler2D
+from microglia_analyzer.tiles import recalibrate as rc
 from microglia_analyzer import __version__
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']  = '3'
@@ -212,12 +211,13 @@ class MicrogliaAnalyzer(object):
 
     def _segmentation_inference(self):
         shape = self.image.shape
-        tiles_manager = ImageTiler2D(_UNET_TILE, _UNET_OVERLAP, shape)
-        input_unet = normalize(self.image, 0.0, 1.0, np.float32)
+        calibrated = rc.scaling.from_calibration.ori2net(self.image, self.calibration[0], self.calibration[1])
+        tiles_manager = ImageTiler2D(_UNET_TILE, _UNET_OVERLAP, calibrated.shape)
+        input_unet = normalize(calibrated, 0.0, 1.0, np.float32)
         tiles = np.array(tiles_manager.image_to_tiles(input_unet, False))
         predictions = np.squeeze(self.segmentation_model.predict(tiles, batch_size=8))
-        # normalize_batch(predictions)
-        self.probability_map = tiles_manager.tiles_to_image(predictions)
+        pm = tiles_manager.tiles_to_image(predictions)
+        self.probability_map = rc.scaling.from_shape(pm, shape)
 
     def set_proba_threshold(self, threshold):
         if not 0.0 <= threshold <= 1.0:
@@ -296,13 +296,17 @@ class MicrogliaAnalyzer(object):
             return
         self.reset_classification()
         yolo_input = normalize(self.image, 0, 255, np.uint8)
-        tiles_manager = ImageTiler2D(_YOLO_TILE, _YOLO_OVERLAP, self.image.shape)
-        tiles = tiles_manager.image_to_tiles(yolo_input, False)
+        calibrated = rc.scaling.from_calibration.ori2net(yolo_input, self.calibration[0], self.calibration[1]).astype(np.uint8)
+        f = rc.get_net2ori_factor(self.calibration[0], self.calibration[1])
+        tiles_manager = ImageTiler2D(_YOLO_TILE, _YOLO_OVERLAP, calibrated.shape)
+        tiles = tiles_manager.image_to_tiles(calibrated, False)
         results = self.classification_model(tiles)
         self.yolo_output = []
         for i, img_results in enumerate(results.xyxy):
             boxes   = img_results[:, :4].tolist()
+            boxes   = [[f*a, f*b, f*c, f*d] for (a, b, c, d) in boxes]
             y, x    = tiles_manager.layout[i].ul_corner
+            y, x    = int(y * f), int(x * f)
             boxes   = [[box[1] + y, box[0] + x, box[3] + y, box[2] + x] for box in boxes]
             scores  = img_results[:, 4].tolist()
             classes = [int(c) for c in img_results[:, 5].tolist()]
