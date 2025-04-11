@@ -100,6 +100,19 @@ def test_demo_unet():
     difference = np.abs(input_img.astype(np.float32) - output_mask.astype(np.float32)).astype(np.uint16)
     assert np.percentile(difference, 75) == 0
 
+def mock_yolo_inference(tile_size, max_boxes=10):
+    # YOLO boxes are XYXY tuples (UL -> LR) -> we simulate the ones generated for each tile.
+    num_boxes = random.randint(2, max_boxes)
+    boxes = []
+    for _ in range(num_boxes):
+        x1 = random.randint(0     , tile_size - 5)
+        y1 = random.randint(0     , tile_size - 5)
+        x2 = random.randint(x1 + 1, tile_size)
+        y2 = random.randint(y1 + 1, tile_size)
+        boxes.append((x1, y1, x2, y2))
+
+    return np.array(boxes)
+
 def test_demo_yolo():
     # Generate a random 2D shapes in ([512, 9999], [512, 9999]).
     shape = (random.randint(512, 9999), random.randint(512, 9999))
@@ -114,18 +127,34 @@ def test_demo_yolo():
     
     # Calibrate to 0.325 µm before feeding the image to the tiler.
     calibrated = rc.scaling.from_calibration.ori2net(input_img, pxl_size, pxl_unit)
+    f = rc.get_net2ori_factor(pxl_size, pxl_unit)
 
     # Tiling
-    tiles_manager = ImageTiler2D(128, 10, calibrated.shape)
+    tile_size = 256
+    tiles_manager = ImageTiler2D(tile_size, 10, calibrated.shape)
     tiles = np.array(tiles_manager.image_to_tiles(calibrated, False))
 
-    # Inference result
-    predictions = np.copy(tiles)
-    probability_map = tiles_manager.tiles_to_image(predictions)
+    all_boxes = []
+    for i in range(len(tiles)):
+        boxes  = mock_yolo_inference(tile_size)
+        print(boxes)
+        print("-----")
+        boxes  = (boxes.astype(np.float32) * f).astype(int)
+        print(boxes)
+        y, x   = tiles_manager.layout[i].ul_corner
+        y, x   = int(y * f), int(x * f)
+        boxes  = [(x1 + x, y1 + y, x2 + x, y2 + y) for (x1, y1, x2, y2) in boxes]
+        all_boxes += boxes
+        print("\n")
 
-    # Retrieve the original image size
-    output_mask = rc.scaling.from_shape(probability_map, shape)
-    assert output_mask.shape == input_img.shape
+    # Check that the box coordinates are bound in the original shape.
+    for box in all_boxes:
+        assert box[0] >= 0
+        assert box[1] >= 0
+        assert box[2] <= shape[1]
+        assert box[3] <= shape[0]
+        assert box[0] <= box[2]
+        assert box[1] <= box[3]
 
-    difference = np.abs(input_img.astype(np.float32) - output_mask.astype(np.float32)).astype(np.uint16)
-    assert np.percentile(difference, 75) == 0
+if __name__ == "__main__":
+    test_demo_yolo()
