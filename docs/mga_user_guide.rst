@@ -12,7 +12,6 @@ This Napari plugin expects your data to respect a precise format:
 * The files must have exactly 1 channel. We recommend to keep your images in 16-bits grayscale.
 * All the images that you want to process at the same time must be in the same folder.
 * Avoid using special characters in the folder's name. (Tips: `Doranum <https://doranum.fr/stockage-archivage/comment-nommer-fichiers_10_13143_wgqw-aa59/>`_)
-* Both models used by this plugin were trained on images having a pixel size of 0.325 µm, you may have troubles if your images have a different pixel size.
 
 .. code-block:: bash
 
