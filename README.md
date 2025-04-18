@@ -31,7 +31,7 @@ We end up with a ".csv" (separated with tabulations instead of commas) file cont
 
 # 02. How to use it?
 
-For a detailed documentation, check this link: ![https://montpellierressourcesimagerie.github.io/microglia-analyzer](https://montpellierressourcesimagerie.github.io/microglia-analyzer).
+For more details, check the [detailed documentation](https://montpellierressourcesimagerie.github.io/microglia-analyzer).
 
 # A. Open the widget
 
