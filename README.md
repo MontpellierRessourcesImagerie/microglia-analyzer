@@ -6,37 +6,32 @@
 
 # What is it?
 
-A Napari plugin that allows for the segmentation and detection of microglia on 2D fluorescent images.
-Z-stacks are not handled.
+A Napari plugin that allows for the segmentation and classification of microglia on 2D fluorescent images.
+Z-stacks and time series are not handled.
 
-It consists in:
-- Segmenting the microglia with a UNet2D model.
-- Create classified bounding-boxes with a YOLOv5.
-- Using some morphology to extract metrics such as:
-    - The number of branches.
-    - The number of leaves (== end points).
-    - The number of vertices (== internal crossings).
-    - The mean branch length.
-    - The total length.
-    - The length of the longest path.
+- Segments the microglia with a UNet2D model.
+- Creates classified bounding-boxes with a YOLOv5.
+- Attributes a class to each cell.
+- Extracts graph information about the cells.
     
-- We end-up with a ".csv" (separated with tabulations instead of commas) file containing all these metrics.
+We end up with a ".csv" (separated with tabulations instead of commas) file containing all these metrics.
+
+- 🐛 Found a bug?: https://github.com/MontpellierRessourcesImagerie/microglia-analyzer/issues
+- 🔍 Need some help?: mri-cia@mri.cnrs.fr
 
 # 01. How to install/upgrade it?
 
 ## Install
 
-```
-pip install git+https://github.com/MontpellierRessourcesImagerie/microglia-analyzer.git napari[all]
-```
+| Action      | Command                                                                                               |
+|-------------|-------------------------------------------------------------------------------------------------------|
+| **Install** | `pip install git+https://github.com/MontpellierRessourcesImagerie/microglia-analyzer.git napari[all]` |
+| **Upgrade** | `pip install --upgrade git+https://github.com/MontpellierRessourcesImagerie/microglia-analyzer.git`   |
 
-## Upgrade
-
-```
-pip install --upgrade git+https://github.com/MontpellierRessourcesImagerie/microglia-analyzer.git
-```
 
 # 02. How to use it?
+
+For a detailed documentation, check this link: ![https://montpellierressourcesimagerie.github.io/microglia-analyzer](https://montpellierressourcesimagerie.github.io/microglia-analyzer).
 
 # A. Open the widget
 
@@ -80,7 +75,3 @@ pip install --upgrade git+https://github.com/MontpellierRessourcesImagerie/micro
 - The button should now indicate `■ Kill batch (i/N)`. You can click it to interrupt the execution. `i` is the rank of the current image, and `N` is the number of images detected in the folder.
 - By the end of the run, the button should be normal again, and a `results.tsv` file should be located in the `controls` folder.
 
---------
-
-[🐛 Found a bug?]: https://github.com/MontpellierRessourcesImagerie/microglia-analyzer/issues
-[🔍 Need some help?]: mri-cia@mri.cnrs.fr
