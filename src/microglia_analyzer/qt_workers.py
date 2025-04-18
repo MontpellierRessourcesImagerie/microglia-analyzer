@@ -5,7 +5,7 @@ import os
 import numpy as np
 
 from microglia_analyzer.utils import (download_from_web, get_all_tiff_files,
-                                      save_as_fake_colors)
+                                      save_as_fake_colors, write_mosaic)
 from microglia_analyzer.ma_worker import MicrogliaAnalyzer
 import tifffile
 
@@ -145,6 +145,7 @@ class QtBatchRunners(QObject):
         self.images_pool = get_all_tiff_files(source_dir)
         self.tsv_lines = []
         self.is_condamned = False
+        self.padding = 0
 
     @pyqtSlot()
     def interupt(self):
@@ -190,6 +191,12 @@ class QtBatchRunners(QObject):
             self.update.emit(self.images_pool[i], i+1, len(self.images_pool))
         self.finished.emit()
 
+    def make_mosaic(self):
+        controls_folder = os.path.join(self.source_dir, "controls")
+        checks_path = os.path.join(controls_folder, "checks")
+        pngs = sorted([f for f in os.listdir(checks_path) if f.lower().endswith(".png")])
+        write_mosaic(controls_folder, pngs, 0.25, self.padding)
+
     def write_csv(self, mga, controls_folder, img_name):
         measures_path = os.path.join(controls_folder, "results")
         measure_path  = os.path.join(measures_path, os.path.splitext(img_name)[0]+".csv")
@@ -208,12 +215,13 @@ class QtBatchRunners(QObject):
         checks_path = os.path.join(controls_folder, "checks")
         check_path  = os.path.join(checks_path, os.path.splitext(img_name)[0]+".png")
         os.makedirs(checks_path, exist_ok=True)
-        save_as_fake_colors(
+        self.padding = save_as_fake_colors(
             [mga.image, (mga.skeleton > 0).astype(np.uint8)*255], 
             mga.bindings,
             mga.class_names,
             check_path
         )
+        self.make_mosaic()
 
     def write_skeleton(self, mga, controls_folder, img_name):
         skeletons_path = os.path.join(controls_folder, "skeletons")

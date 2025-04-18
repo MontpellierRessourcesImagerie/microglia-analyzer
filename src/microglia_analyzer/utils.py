@@ -2,6 +2,7 @@ import cv2
 import requests
 import zipfile
 import tempfile
+import math
 import os
 import numpy as np
 import shutil
@@ -47,8 +48,9 @@ def save_as_fake_colors(images, bindings, class_names, output_path):
 
     canvas = normalize(image, 0, 255, np.uint8)
     canvas = np.maximum(canvas, mask)
-    canvas = draw_bounding_boxes(canvas, bindings, class_names)
+    canvas, height = draw_bounding_boxes(canvas, bindings, class_names)
     cv2.imwrite(output_path, canvas)
+    return height
 
 
 def calculate_iou(box1, box2):
@@ -108,7 +110,6 @@ def draw_bounding_boxes(image, bindings, class_names, exclude=-1, thickness=2):
     - exclude (int): Class to be excluded.
     - thickness (int): Thickness of the bounding-boxes outlines (default=2).
     """
-    import tifffile
     alpha_channel = np.zeros_like(image) + 255
     image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
     color_channels = np.zeros_like(image)
@@ -145,7 +146,7 @@ def draw_bounding_boxes(image, bindings, class_names, exclude=-1, thickness=2):
             thickness=-1
         )
         cv2.putText(image, n, (20+r_w+10, y+int(spacing/2)+i*(spacing+line_height)+r_h), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), 1)
-    return image
+    return image, height
 
 
 def bindings_as_napari_shapes(bindings, exclude=-1):
@@ -242,6 +243,81 @@ def get_all_tiff_files(folder_path, no_ext=False):
                     tiff_files.append(match.group(0))
         return sorted(tiff_files)
 
+def best_grid_shape(n):
+    if n <= 0:
+        return (0, 0)
+
+    side = math.ceil(math.sqrt(n))
+    best = (side, side)
+
+    for rows in range(1, side + 1):
+        cols = math.ceil(n / rows)
+        if rows * cols >= n:
+            best = (rows, cols)
+            if rows == cols:
+                break
+
+    return best
+
+import cv2
+import numpy as np
+
+def create_titled_canvas(shape, title, bg_color=(0, 0, 0), text_color=(255, 255, 255), font=cv2.FONT_HERSHEY_SIMPLEX):
+    # convert all chars to ascii in the title. Convert all the french chars to non-accutated ones.
+    title = title.encode('ascii', 'ignore').decode('ascii')
+
+    height, width, channels = shape
+    canvas = np.full((height, width, channels), bg_color, dtype=np.uint8)
+
+    max_scale = 10
+    thickness = 2
+    scale = max_scale
+    while scale > 0.1:
+        (text_width, text_height), baseline = cv2.getTextSize(title, font, scale, thickness)
+        if text_width <= width * 0.95:
+            break
+        scale -= 0.1
+
+    x = (width - text_width) // 2
+    y = text_height + baseline + 10
+
+    cv2.putText(canvas, title, (x, y), font, scale, text_color, thickness, lineType=cv2.LINE_AA)
+
+    return canvas
+
+
+def write_mosaic(controls_folder, pngs_list, factor, padding):
+    """
+    Write a mosaic of the images in `pngs_list` in the `controls_folder`.
+    The images are resized to the factor.
+    """
+    checks_path = os.path.join(controls_folder, "checks")
+    if not os.path.isdir(checks_path):
+        return
+    n = len(pngs_list)
+    rows, cols = best_grid_shape(n)
+    first = cv2.imread(os.path.join(controls_folder, "checks", pngs_list[0]))
+    height, width = first.shape[:2]
+    height = int((height - padding) * factor)
+    width  = int(width * factor)
+    mosaic = np.zeros((height * rows, width * cols, 3), dtype=np.uint8)
+
+    for i, png_name in enumerate(pngs_list):
+        png = cv2.imread(os.path.join(controls_folder, "checks", png_name))
+        row = i // cols
+        col = i % cols
+        y1 = row * height
+        y2 = y1 + height
+        x1 = col * width
+        x2 = x1 + width
+        png = png[:-padding, :, :]
+        title = create_titled_canvas(png.shape, png_name)
+        png = np.maximum(png, title)
+        png_resized = cv2.resize(png, (width, height))
+        mosaic[y1:y2, x1:x2] = png_resized
+
+    cv2.imwrite(os.path.join(controls_folder, "mosaic.png"), mosaic)
+
 
 def generate_random_bindings(image_size, num_bindings):
     bindings = []
@@ -254,10 +330,10 @@ def generate_random_bindings(image_size, num_bindings):
     return bindings
 
 if __name__ == "__main__":
-    import tifffile
-    image = tifffile.imread("/home/benedetti/Desktop/microglia/P7- moelle spinale.tif")
-    image = normalize(image, 0, 255, np.uint8)
-    bindings = generate_random_bindings(image.shape, 20)
-    class_names = ['garbage', 'amoeboid', 'rod', 'intermediate', 'homeostatic']
-    r = draw_bounding_boxes(image, bindings, class_names)
-    cv2.imwrite("/tmp/test.png", r)
+    controls_folder = "/home/benedetti/Documents/projects/2060-microglia/data/raw-tiff-imgs/controls"
+    checks_path = os.path.join(controls_folder, "checks")
+    pngs_list = sorted([f for f in os.listdir(checks_path) if f.lower().endswith(".png")])
+    pngs_list = pngs_list[:10]
+    factor = 0.5
+    padding = 325
+    write_mosaic(controls_folder, pngs_list, factor, padding)
