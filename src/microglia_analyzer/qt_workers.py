@@ -41,7 +41,7 @@ class QtVersionableDL(QObject):
         except ValueError as _:
             print(f"Invalid identifier: {self.identifier}.")
             return True
-        return model is not None
+        return False
 
     def _seek_local_model(self):
         """ Checks if a model is present locally and sets the model_path attribute. """

@@ -164,7 +164,6 @@ class MicrogliaAnalyzerWidget(QWidget):
 
         # Segmentation button
         self.segment_microglia_button = QPushButton("🔍 Segment")
-        # self.segment_microglia_button.setFont(self.font)
         self.segment_microglia_button.clicked.connect(self.segment_microglia)
         layout.addWidget(self.segment_microglia_button)
 
@@ -172,14 +171,12 @@ class MicrogliaAnalyzerWidget(QWidget):
 
         # "Lower bound" title
         title_lower_bound = QLabel("➡ Lower thresholds:")
-        # title_lower_bound.setAlignment(Qt.AlignCenter)
-        # title_lower_bound.setStyleSheet("font-weight: bold;")
         title_lower_bound.setMaximumHeight(30)
         layout.addWidget(title_lower_bound)
 
         # Minimal area of a microglia
         h_layout = QHBoxLayout()
-        minimal_area_label = QLabel("Area:")
+        minimal_area_label = QLabel("Area")
         h_layout.addWidget(minimal_area_label)
         self.minimal_area_input = QSpinBox()
         self.minimal_area_input.setRange(0, 1000000)
@@ -192,7 +189,7 @@ class MicrogliaAnalyzerWidget(QWidget):
 
         # Probality threshold slider
         h_layout = QHBoxLayout()
-        self.probability_threshold_label = QLabel("Proba:")
+        self.probability_threshold_label = QLabel("Proba")
         h_layout.addWidget(self.probability_threshold_label)
         self.probability_threshold_input = QSpinBox()
         self.probability_threshold_input.setRange(1, 100)
