@@ -1,57 +1,157 @@
-import cv2
+from skimage.transform import resize
 from microglia_analyzer import ORIGINAL_PIXEL_SIZE, ORIGINAL_UNIT
 import pint
 
 """
-Both the UNet and the YOLOv5 trained for this project were trained with images having a pixel size of 0.325 µm.
+Both the UNet and the YOLOv5 from this project were trained with images having a pixel size of 0.325 µm.
 So, to avoid having to retrain the models, we will recalibrate the images to have the same pixel size.
 They will be either upscaled or downscaled to artificially reach a pixel size of 0.325 µm.
 """
 
-def process_factor(input_calib, input_unit):
+def process_factor(input_px_size, input_unit, output_px_size, output_unit):
     """
-    We process the factor to pass from the input calibration to the original calibration.
-    We will multiply the input image's height and width by this factor to get the new size.
+    Process the scaling factor to convert the input pixel size to the output pixel size.
+
+    Args:
+        input_px_size (float): The pixel size of the input image.
+        input_unit (str)     : The unit of the input pixel size.
+        output_px_size (float): The pixel size of the output image.
+        output_unit (str)    : The unit of the output pixel size.
+
+    Returns:
+        float: The scaling factor to convert the input pixel size to the output pixel size.
     """
     ureg = pint.UnitRegistry()
-    l1 = ORIGINAL_PIXEL_SIZE * ureg(ORIGINAL_UNIT)
-    l2 = input_calib * ureg(input_unit)
-    l2_c = l2.to(ORIGINAL_UNIT)
-    return float(l1 / l2_c)
+    input_px_basis = input_px_size * ureg(input_unit)
+    output_px_basis = output_px_size * ureg(output_unit)
+    return float(input_px_basis / output_px_basis)
 
-
-def recalibrate_shape(input_shape, input_calib, input_unit):
+def get_ori2net_factor(input_px_size, input_unit):
     """
-    The shape of the image has to be recalibrated to have a pixel size of 0.325 µm.
+    Get the scaling factor to convert the input pixel size to the UNet pixel size (0.325 µm).
+
+    Args:
+        input_px_size (float): The pixel size of the input image.
+        input_unit (str)     : The unit of the input pixel size.
+
+    Returns:
+        float: The scaling factor to convert the input pixel size to the UNet pixel size.
+    """
+    return process_factor(input_px_size, input_unit, ORIGINAL_PIXEL_SIZE, ORIGINAL_UNIT)
+
+def get_net2ori_factor(output_px_size, output_unit):
+    """
+    Get the scaling factor to convert the UNet pixel size (0.325 µm) to the output pixel size.
+
+    Args:
+        output_px_size (float): The pixel size of the output image.
+        output_unit (str)     : The unit of the output pixel size.
+
+    Returns:
+        float: The scaling factor to convert the UNet pixel size to the output pixel size.
+    """
+    return process_factor(ORIGINAL_PIXEL_SIZE, ORIGINAL_UNIT, output_px_size, output_unit)
+
+def recalibrate_shape(input_shape, input_px_size, input_unit, output_px_size, output_unit):
+    """
+    Takes the shape of an image and its calibration to process its shape with another calibration.
+    The number of channels (C) is not modified, only the Y and X dimensions are recalibrated.
 
     Args:
         input_shape (tuple): The shape of the input image.
-        input_calib (float): The calibration of the input image.
-        input_unit (str)   : The unit of the input calibration.
+        input_px_size (float): The pixel size of the input image.
+        input_unit (str): The unit of the input pixel size.
+        output_px_size (float): The pixel size of the output image.
+        output_unit (str): The unit of the output pixel size.
     
     Returns:
         tuple: The recalibrated shape.
     """
-    factor = process_factor(input_calib, input_unit)
-    return tuple([int(i * factor) for i in input_shape])
+    # Only Y, and X have to be scaled, we don't touch the number of channels (C, Y, X).
+    factor = process_factor(input_px_size, input_unit, output_px_size, output_unit)
+    return input_shape[:-2] + tuple([int(round(factor * i)) for i in input_shape[-2:]])
 
 
-def recalibrate_image(input_image, input_calib, input_unit, inter=True):
-    """
-    The image has to be recalibrated to have a pixel size of 0.325 µm.
-    Its shape is either (Y, X) or (Y, X, C).
-    If pixels are wider, it takes less pixels to represent a similar object.
-    So, passing to a larger size should give a factor smaller than 1.0.
-    The factor is calculated with the input length in the denominator.
+class scaling: # namespace
 
-    Args:
-        input_image (np.array): The image to recalibrate.
-        input_calib (float)   : The calibration of the input image.
-        input_unit (str)      : The unit of the input calibration.
-    
-    Returns:
-        np.array: The recalibrated (interpolated) image.
-    """
-    new_shape = recalibrate_shape(input_image.shape, input_calib, input_unit)
-    interpolation = cv2.INTER_CUBIC if inter else cv2.INTER_NEAREST
-    return cv2.resize(input_image, new_shape, interpolation=interpolation)
+    class from_calibration:
+
+        @staticmethod
+        def ori2net(data, pixel_size, unit, inter=True):
+            """
+            Scales an image to simulate a pixel size of 0.325 µm.
+            Made to convert an input image ("original") to something that the UNet ("network") can process.
+
+            Args:
+                data (np.array): The image to scale, with a pixel size that is not 0.325µm.
+                pixel_size (float): The pixel size of the 'data' image.
+                unit (str): The unit of the pixel size.
+                inter (bool): Whether to use interpolation or not. Defaults to True.
+
+            Returns:
+                np.array: The scaled image with a pixel size of 0.325µm.
+            """
+            new_shape = recalibrate_shape(data.shape, pixel_size, unit, ORIGINAL_PIXEL_SIZE, ORIGINAL_UNIT)
+            return resize(
+                data, 
+                new_shape, 
+                order=3 if inter else 0,
+                preserve_range=True,
+                anti_aliasing=False
+            )
+        
+        @staticmethod
+        def net2ori(data, pixel_size, unit, inter=True):
+            """
+            Scales an image having a pixel size of 0.325µm to the original pixel size.
+            Made to convert the UNet's output ("network") to something having the original pixel size ("original").
+
+            Args:
+                data (np.array): The image to scale, with a pixel size of 0.325µm.
+                pixel_size (float): The target pixel size to reach with the scaling.
+                unit (str): The unit of the pixel size.
+                inter (bool): Whether to use interpolation or not. Defaults to True.
+            
+            Returns:
+                np.array: The scaled image with the target pixel size.
+            """
+            new_shape = recalibrate_shape(data.shape, ORIGINAL_PIXEL_SIZE, ORIGINAL_UNIT, pixel_size, unit)
+            return resize(
+                data, 
+                new_shape, 
+                order=3 if inter else 0,
+                preserve_range=True,
+                anti_aliasing=False
+            )
+
+    @staticmethod
+    def from_shape(data, shape, inter=True):
+        """
+        Scales an image to mimic a pixel size of 0.325 µm.
+        Made to convert an input image ("original") to something that the UNet ("network") can process.
+
+        Args:
+            data (np.array): The image to scale, with a pixel size that is not 0.325µm.
+            shape (tuple): The target shape to reach with the scaling.
+            inter (bool): Whether to use interpolation or not. Defaults to True.
+
+        Returns:
+            np.array: The scaled image with a pixel size of 0.325µm.
+        """
+        return resize(
+            data, 
+            shape, 
+            order=3 if inter else 0,
+            preserve_range=True,
+            anti_aliasing=False
+        )
+
+
+if __name__ == "__main__":
+    import tifffile
+    input = "/home/benedetti/Documents/projects/2060-microglia/data/2025-04-11-calibration-debug/Snap-1272 contro.tiff"
+    output = "/home/benedetti/Documents/projects/2060-microglia/data/2025-04-11-calibration-debug/scaled-python.tif"
+    imin = tifffile.imread(input)
+    imscaled = scaling.from_calibration.ori2net(imin, 172.5, "nm")
+    imscaled = scaling.from_shape(imscaled, imin.shape)
+    tifffile.imwrite(output, imscaled)

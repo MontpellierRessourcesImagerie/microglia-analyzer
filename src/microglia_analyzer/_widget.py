@@ -1,19 +1,20 @@
-from qtpy.QtWidgets import (QWidget, QVBoxLayout, QGroupBox, QTableWidget, 
-                            QSpinBox, QHBoxLayout, QPushButton, QHeaderView,
-                            QFileDialog, QComboBox, QLabel, QTableWidgetItem,
-                            QSlider, QSpinBox, QFrame, QLineEdit, QCheckBox, QApplication)
+from qtpy.QtWidgets import (QWidget    , QVBoxLayout, QGroupBox  , QListWidgetItem,
+                            QSpinBox   , QHBoxLayout, QPushButton, QListWidget    ,
+                            QFileDialog, QComboBox  , QLabel     , QApplication   ,
+                            QSlider    , QSpinBox   , QLineEdit  , QCheckBox      )
 
 from qtpy.QtCore import QThread, Qt
 
 
 from PyQt5.QtGui import QFont, QDoubleValidator, QColor
-from PyQt5.QtCore import Qt, QLocale
+from PyQt5.QtCore import Qt, QLocale, QSize
 
 import napari
 from napari.utils.notifications import show_info, show_warning
 from napari.utils import progress
 
 import tifffile
+import cv2
 import numpy as np
 import os
 import json
@@ -32,6 +33,29 @@ _IMAGE_LAYER_NAME          = "µ-Image"
 _SEGMENTATION_LAYER_NAME   = "µ-Segmentation"
 _CLASSIFICATION_LAYER_NAME = "µ-Classification"
 _SKELETON_LAYER_NAME       = "µ-Skeleton"
+_MOSAIC_LAYER_NAME         = "µ-Batch-preview (25%)"
+
+class ColorLabelWidget(QWidget):
+    def __init__(self, color: QColor, text: str):
+        super().__init__()
+        layout = QHBoxLayout()
+        layout.setContentsMargins(4, 2, 4, 2)
+        layout.setSpacing(8)
+
+        self.color_box = QLabel()
+        self.color_box.setFixedSize(QSize(20, 20))
+        self.color_box.setStyleSheet(f"""
+            background-color: {color.name()};
+            border-radius: 4px;
+        """)
+
+        self.text_label = QLabel(text)
+        self.text_label.setAlignment(Qt.AlignVCenter)
+
+        layout.addWidget(self.color_box)
+        layout.addWidget(self.text_label)
+        layout.addStretch()
+        self.setLayout(layout)
 
 class MicrogliaAnalyzerWidget(QWidget):
     
@@ -45,6 +69,8 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.sources_folder = None
         self.active_worker  = False
         self.n_images       = 0
+        self.worker         = None
+        self.thread         = None
         self.init_ui()
 
     # -------- UI: ----------------------------------
@@ -70,9 +96,6 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.clear_state_button.setFont(self.font)
         self.clear_state_button.clicked.connect(self.clear_state)
         layout.addWidget(self.clear_state_button)
-
-        # Some vertical spacing
-        layout.addSpacing(20)
 
         # Checkbox to discard previous runs
         self.discard_runs_checkbox = QCheckBox("Discard previous run at opening")
@@ -108,6 +131,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         float_validator.setLocale(QLocale(QLocale.English))
         float_validator.setNotation(QDoubleValidator.StandardNotation)
         self.calibration_input.setValidator(float_validator)
+        self.calibration_input.setAlignment(Qt.AlignRight)
         nav_layout.addWidget(self.calibration_input)
 
         # Create QComboBox for unit selection
@@ -140,48 +164,45 @@ class MicrogliaAnalyzerWidget(QWidget):
 
         # Segmentation button
         self.segment_microglia_button = QPushButton("🔍 Segment")
-        # self.segment_microglia_button.setFont(self.font)
         self.segment_microglia_button.clicked.connect(self.segment_microglia)
         layout.addWidget(self.segment_microglia_button)
 
+        layout.addSpacing(10)
+
+        # "Lower bound" title
+        title_lower_bound = QLabel("➡ Lower thresholds:")
+        title_lower_bound.setMaximumHeight(30)
+        layout.addWidget(title_lower_bound)
+
         # Minimal area of a microglia
         h_layout = QHBoxLayout()
-        self.minimal_area_label = QLabel("Min area (µm²):")
-        h_layout.addWidget(self.minimal_area_label)
+        minimal_area_label = QLabel("Area")
+        h_layout.addWidget(minimal_area_label)
         self.minimal_area_input = QSpinBox()
         self.minimal_area_input.setRange(0, 1000000)
-        self.minimal_area_input.setValue(5)
+        self.minimal_area_input.setValue(15)
         self.minimal_area_input.valueChanged.connect(self.min_area_update)
         h_layout.addWidget(self.minimal_area_input)
+        min_area_unit_label = QLabel("µm²")
+        h_layout.addWidget(min_area_unit_label)
         layout.addLayout(h_layout)
 
         # Probality threshold slider
         h_layout = QHBoxLayout()
-        self.probability_threshold_label = QLabel("Min probability:")
+        self.probability_threshold_label = QLabel("Proba")
         h_layout.addWidget(self.probability_threshold_label)
-        self.probability_threshold_slider = QSlider(Qt.Horizontal)
-        self.probability_threshold_slider.setRange(0, 100)
-        self.probability_threshold_slider.setValue(20)
-        self.probability_threshold_slider.setTickInterval(1)
-        self.probability_threshold_slider.setTickPosition(QSlider.TicksBelow)
-        self.probability_threshold_slider.valueChanged.connect(self.proba_threshold_update)
-        h_layout.addWidget(self.probability_threshold_slider)
-        self.proba_value_label = QLabel("20%")
-        h_layout.addWidget(self.proba_value_label)
+        self.probability_threshold_input = QSpinBox()
+        self.probability_threshold_input.setRange(1, 100)
+        self.probability_threshold_input.setValue(80)
+        self.probability_threshold_input.setSingleStep(1)
+        self.probability_threshold_input.valueChanged.connect(self.proba_threshold_update)
+        h_layout.addWidget(self.probability_threshold_input)
+        proba_value_label = QLabel("%")
+        h_layout.addWidget(proba_value_label)
         layout.addLayout(h_layout)
 
         self.segment_microglia_group.setLayout(layout)
         self.layout.addWidget(self.segment_microglia_group)
-
-    def classes_table_ui(self):
-        self.table = QTableWidget(self)
-        self.table.setColumnCount(2)
-        self.table.setHorizontalHeaderLabels(["Color", "Class"])
-        self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
-        self.table.setColumnWidth(0, 60)
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-        return self.table
 
     def classify_microglia_panel(self):
         self.classify_microglia_group = QGroupBox("Classification")
@@ -194,9 +215,17 @@ class MicrogliaAnalyzerWidget(QWidget):
         layout.addWidget(self.classify_microglia_button)
 
         # List of classes
-        self.table = self.classes_table_ui()
-        self.reset_table_ui()
-        layout.addWidget(self.table)
+        title_classes = QLabel("Classes")
+        title_classes.setAlignment(Qt.AlignCenter)
+
+        self.classes_list = QListWidget()
+        self.classes_list.setFocusPolicy(Qt.NoFocus)
+        self.classes_list.setEditTriggers(QListWidget.NoEditTriggers)
+        self.classes_list.setSelectionMode(QListWidget.NoSelection)
+        self.classes_list.setDragEnabled(False)
+
+        self.reset_classes_list()
+        layout.addWidget(self.classes_list)
 
         # "Show garbage" checkbox
         self.show_garbage_box = QCheckBox("Show garbage")
@@ -233,7 +262,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.calibrationButton.setEnabled(state)
         self.segment_microglia_button.setEnabled(state)
         self.minimal_area_input.setEnabled(state)
-        self.probability_threshold_slider.setEnabled(state)
+        self.probability_threshold_input.setEnabled(state)
         self.classify_microglia_button.setEnabled(state)
         self.export_measures_button.setEnabled(state)
         self.show_garbage_box.setEnabled(state)
@@ -296,7 +325,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.thread = QThread()
 
         self.mam.set_min_surface(self.minimal_area_input.value())
-        self.mam.set_proba_threshold(self.probability_threshold_slider.value() / 100)
+        self.mam.set_proba_threshold(self.probability_threshold_input.value() / 100)
 
         self.worker = QtSegmentMicroglia(self.pbr, self.mam)
         self.total = 0
@@ -313,27 +342,23 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.update_seg_pp()
 
     def proba_threshold_update(self):
-        self.proba_value_label.setText(f"{self.probability_threshold_slider.value()}%")
         self.update_seg_pp()
 
-    def reset_table_ui(self):
+    def reset_classes_list(self):
         classes = self.mam.class_names
         if classes is None:
             return
-
-        self.table.setRowCount(0)
+        
+        self.classes_list.clear()
         items = [(QColor(BBOX_COLORS[i][:7]), c) for i, c in enumerate(classes)]
-        self.table.setRowCount(len(classes))
 
         for row, (color, word) in enumerate(items):
-            color_item = QTableWidgetItem()
-            color_item.setBackground(color)
-            color_item.setFlags(Qt.ItemIsEnabled)
-            self.table.setItem(row, 0, color_item)
-
-            word_item = QTableWidgetItem(word)
-            word_item.setFlags(Qt.ItemIsEnabled)
-            self.table.setItem(row, 1, word_item)
+            item = QListWidgetItem()
+            widget = ColorLabelWidget(color, word.capitalize())
+            item.setSizeHint(widget.sizeHint())
+            item.setFlags(Qt.NoItemFlags)
+            self.classes_list.addItem(item)
+            self.classes_list.setItemWidget(item, widget)
 
     def classify_microglia(self):
         modifiers = QApplication.keyboardModifiers()
@@ -409,6 +434,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.unit_selector.setCurrentIndex(0)
         self.pixel_size_label.setText("Pixel size: ---")
         self.run_batch_button.setText("▶ Run batch")
+        self.run_batch_button.setStyleSheet("")
     
     def reset_layers(self):
         if _SEGMENTATION_LAYER_NAME in self.viewer.layers:
@@ -471,7 +497,7 @@ class MicrogliaAnalyzerWidget(QWidget):
 
     def update_seg_pp(self):
         self.mam.set_min_surface(self.minimal_area_input.value())
-        self.mam.set_proba_threshold(self.probability_threshold_slider.value() / 100)
+        self.mam.set_proba_threshold(self.probability_threshold_input.value() / 100)
         self.mam._segmentation_postprocessing()
         self.mam._classification_postprocessing()
         self.show_microglia()
@@ -501,7 +527,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         if bindings is None:
             return
         boxes, colors = bindings_as_napari_shapes(bindings, -1 if self.show_garbage_box.isChecked() else 0)
-        self.reset_table_ui()
+        self.reset_classes_list()
         layer = None
         if _CLASSIFICATION_LAYER_NAME not in self.viewer.layers:
             layer = self.viewer.add_shapes(boxes, name=_CLASSIFICATION_LAYER_NAME, edge_color=colors, face_color='#00000000', edge_width=4)
@@ -574,6 +600,22 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.write_settings(controls_folder)
         show_info(f"Microglia measured.")
 
+    def show_mosaic(self, text, current, total):
+        mosaic_path = os.path.join(self.sources_folder, "controls", "mosaic.png")
+        if not os.path.isfile(mosaic_path):
+            return
+        mosaic = cv2.imread(mosaic_path)
+        mosaic = cv2.cvtColor(mosaic, cv2.COLOR_BGR2RGB)
+        layer = None
+        if _MOSAIC_LAYER_NAME in self.viewer.layers:
+            layer = self.viewer.layers[_MOSAIC_LAYER_NAME]
+            layer.data = mosaic
+        else:
+            self.viewer.layers.clear()
+            layer = self.viewer.add_image(mosaic, name=_MOSAIC_LAYER_NAME)
+        if self.mam.calibration is not None:
+            self.set_calibration(*self.mam.calibration)
+
     def run_batch(self):
         sources = get_all_tiff_files(self.sources_folder)
         print("Found sources: ", sources)
@@ -581,19 +623,21 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.pbr = progress()
         self.pbr.set_description("Running on folder...")
         self.run_batch_button.setText(f"■ Kill ({str(1).zfill(2)}/{str(self.n_images).zfill(2)})")
+        self.run_batch_button.setStyleSheet("background-color: #cd1818;")
         self.set_active_ui(False, True)
         self.thread = QThread()
 
         settings = {
             'calibration': self.mam.calibration,
             'cc_min_size': self.minimal_area_input.value(),
-            'proba_threshold': self.probability_threshold_slider.value() / 100,
+            'proba_threshold': self.probability_threshold_input.value() / 100,
             'unet_path': os.path.dirname(self.mam.segmentation_model_path),
             'yolo_path': os.path.dirname(os.path.dirname(self.mam.classification_model_path))
         }
 
         self.worker = QtBatchRunners(self.pbr, self.sources_folder, settings)
         self.worker.update.connect(self.update_pbr)
+        self.worker.update.connect(self.show_mosaic)
         self.active_worker = True
 
         self.worker.moveToThread(self.thread)
@@ -606,6 +650,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.end_worker()
         self.n_images = 0
         self.run_batch_button.setText("▶ Run batch")
+        self.run_batch_button.setStyleSheet("")
         show_info("=== 🎉 Batch completed. ===")
     
     def end_worker(self):
@@ -623,6 +668,7 @@ class MicrogliaAnalyzerWidget(QWidget):
         self.pbr.set_description(text)
         if (self.n_images > 0):
             self.run_batch_button.setText(f"■ Kill ({str(current+1).zfill(2)}/{str(self.n_images).zfill(2)})")
+            self.run_batch_button.setStyleSheet("background-color: #cd1818;")
     
     def import_settings(self):
         # 1. The control folder has to exist for any image.
@@ -682,9 +728,9 @@ class MicrogliaAnalyzerWidget(QWidget):
         if len(known_classes.intersection(target_classes)) != len(known_classes):
             print("The list of classes doesn't match.")
             return False
-        self.reset_table_ui()
+        self.reset_classes_list()
         # 9. Restoring parameters
-        self.probability_threshold_slider.setValue(int(100.0 * float(settings['Probability threshold'])))
+        self.probability_threshold_input.setValue(int(100.0 * float(settings['Probability threshold'])))
         self.minimal_area_input.setValue(int(settings['Minimal surface']))
         # 10. Restore the mask
         self.mam.mask = tifffile.imread(mask_path)

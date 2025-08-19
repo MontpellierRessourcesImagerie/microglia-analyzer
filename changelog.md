@@ -1,9 +1,18 @@
-# Change Log
+# --- CHANGES LOG ---
+
+## Version 1.2.0 (18 Apr. 2025) 
+
+- Images with different calibrations can now be used.
+- The unit-tests for the calibration are created.
+- The UI has been improved for it to be suitable to smaller screens.
+- The batch mode now displays a mosaic of results during the run.
+- The default values has been set to something more realistic.
 
 ## Version 1.1.6 (24 Jan. 2025)
 
 - Modified the output so it can be re-opened from the viewer.
-- The classifications are stored in the YOLO format. Masks and skeletons are saved as TIFFs.
+- The classifications are stored in the YOLO format. 
+- Masks and skeletons are saved as TIFFs.
 - There is still a "results.csv" file, but there is also an independant file per image.
 - Re-opening an image will also re-load the associated settings.
 - The documentation is in progress.

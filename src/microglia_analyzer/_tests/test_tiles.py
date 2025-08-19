@@ -2,23 +2,7 @@ import pytest
 import numpy as np
 import itertools
 from microglia_analyzer.tiles.tiler import ImageTiler2D, normalize
-from microglia_analyzer.tiles.recalibrate import recalibrate_shape, recalibrate_image
 
-
-""" TESTS:
-
-    - [X] Test que des exceptions sont levées si les paramètres sont incorrects.
-    - [X] Test que le nombre de tiles est correct sur chaque axe.
-    - [X] Test que les tiles ont la même forme que ce qui est calculé.
-    - [X] Test que le nombre de tiles correspond à la grid size.
-    - [X] Test que le nombre de tiles correspond au nombre de coefficients de blending.
-    - [X] Test que la normalization fonctionne correctement, avec les caps de valeurs.
-    - [X] Test que les tiles fusionnées redonnent l'image d'origine.
-    - [X] Test que l'assemblage des coefficients de blending donne un canvas à 1.0 (avec flat et gradient).
-    - [X] Test que le découpage et l'assemblage fonctionne peu importe le nombre de channels.
-    - [ ] Test que le recalibrage d'image fonctionne correctement.
-
-"""
 
 # (patch_size, overlap, (height, width))
 _PATCHES_SETTINGS = [
@@ -196,11 +180,3 @@ def test_blending_coefs_sum(patch_size, overlap, shape, blending, nChannels):
     transformed_image = pe.tiles_to_image(tiles)
     diff = np.abs(original_image - transformed_image)
     assert np.max(diff) - np.min(diff) < 1e-5
-
-@pytest.mark.parametrize("input_p_size, input_unit, input_shape, expected_shape", _SHAPES_RECALIBRATE)
-def test_recalibrate_shape(input_p_size, input_unit, input_shape, expected_shape):
-    """
-    Tests that shapes are correctly recalibrated to match a pixel size of 0.325 µm.
-    """
-    new_shape = recalibrate_shape(input_shape, input_p_size, input_unit)
-    assert new_shape == expected_shape
