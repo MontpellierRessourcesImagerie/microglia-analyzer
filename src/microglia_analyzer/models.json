@@ -1,10 +1,10 @@
 {
     "µnet" : {
-        "url": "https://dev.mri.cnrs.fr/attachments/download/3623/%C2%B5net.zip",
+        "url": "https://github.com/MontpellierRessourcesImagerie/microglia-analyzer/releases/download/v2.0.0/unet.zip",
         "version": 196
     },
     "µyolo": {
-        "url": "https://dev.mri.cnrs.fr/attachments/download/3637/%C2%B5yolo.zip",
+        "url": "https://github.com/MontpellierRessourcesImagerie/microglia-analyzer/releases/download/v2.0.0/yolo.zip",
         "version": 99
     }
 }
