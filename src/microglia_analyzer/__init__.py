@@ -1,4 +1,4 @@
-__version__ = "2.1.0"
+__version__ = "2.1.1"
 __release__ = "stable" # "dev" or "stable"
 
 import re
