@@ -1,0 +1,7 @@
+microglia\_analyzer.custom\_loss module
+=======================================
+
+.. automodule:: microglia_analyzer.custom_loss
+   :members:
+   :undoc-members:
+   :show-inheritance:
