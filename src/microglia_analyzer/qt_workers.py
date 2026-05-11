@@ -1,5 +1,8 @@
-from qtpy.QtCore import QObject
-from PyQt5.QtCore import pyqtSignal, pyqtSlot
+from qtpy.QtCore import (
+    QObject,
+    Signal,
+    Slot
+)
 import requests
 import os
 import numpy as np
@@ -13,8 +16,8 @@ _MODELS = "https://raw.githubusercontent.com/MontpellierRessourcesImagerie/micro
 
 class QtVersionableDL(QObject):
 
-    finished = pyqtSignal()
-    update   = pyqtSignal(str, int, int)
+    finished = Signal()
+    update   = Signal(str, int, int)
 
     def __init__(self, pbr, mga, idf=None, tgt_path=None):
         super().__init__()
@@ -118,8 +121,8 @@ class QtClassifyMicroglia(QtVersionableDL):
 
 class QtMeasureMicroglia(QObject):
     
-    finished = pyqtSignal()
-    update   = pyqtSignal(str, int, int)
+    finished = Signal()
+    update   = Signal(str, int, int)
 
     def __init__(self, pbr, mga):
         super().__init__()
@@ -132,9 +135,9 @@ class QtMeasureMicroglia(QObject):
 
 class QtBatchRunners(QObject):
     
-    finished = pyqtSignal()
-    update   = pyqtSignal(str, int, int)
-    to_kill  = pyqtSignal()
+    finished = Signal()
+    update   = Signal(str, int, int)
+    to_kill  = Signal()
 
     def __init__(self, pbr, source_dir, settings):
         super().__init__()
@@ -147,7 +150,7 @@ class QtBatchRunners(QObject):
         self.is_condamned = False
         self.padding = 0
 
-    @pyqtSlot()
+    @Slot()
     def interupt(self):
         self.is_condamned = True
 

@@ -1,17 +1,14 @@
 import pytest
-from unittest.mock import patch
-from unittest.mock import Mock
-
-from PyQt5.QtCore import QObject, pyqtSignal, QCoreApplication
-
+from unittest.mock import (
+    patch, 
+    Mock
+)
+from qtpy.QtCore import QCoreApplication
 import os
 from tempfile import gettempdir
 import shutil
 import requests
-
-from microglia_analyzer.qt_workers import QtVersionableDL, QtSegmentMicroglia, QtClassifyMicroglia
-from microglia_analyzer.ma_worker import MicrogliaAnalyzer
-from microglia_analyzer.utils import download_from_web
+from microglia_analyzer.qt_workers import QtVersionableDL
 
 MODEL_PATH = os.path.join(gettempdir(), "test")
 

@@ -1,12 +1,17 @@
-from qtpy.QtWidgets import (QWidget, QVBoxLayout, QLineEdit,
-                            QHBoxLayout, QPushButton, QLabel,
-                            QFileDialog, QComboBox, QGroupBox)
-
+from qtpy.QtWidgets import (
+    QWidget, 
+    QVBoxLayout, 
+    QLineEdit,
+    QHBoxLayout, 
+    QPushButton, 
+    QLabel,
+    QFileDialog, 
+    QComboBox, 
+    QGroupBox
+)
 from napari.utils.notifications import show_info
-
 import tifffile
 import skimage
-
 from skimage.morphology import skeletonize
 import numpy as np
 import os

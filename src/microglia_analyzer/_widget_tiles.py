@@ -1,16 +1,28 @@
-from qtpy.QtWidgets import (QWidget, QVBoxLayout, QGroupBox, QButtonGroup,
-                            QSpinBox, QHBoxLayout, QPushButton, 
-                            QFileDialog, QComboBox, QLabel, QRadioButton,
-                            QCheckBox, QSpinBox, QSlider, QLineEdit)
-
+from qtpy.QtWidgets import (
+    QWidget, 
+    QVBoxLayout, 
+    QGroupBox, 
+    QButtonGroup,
+    QSpinBox, 
+    QHBoxLayout, 
+    QPushButton, 
+    QFileDialog, 
+    QComboBox, 
+    QLabel, 
+    QRadioButton,
+    QCheckBox, 
+    QSpinBox, 
+    QSlider, 
+    QLineEdit
+)
 from qtpy.QtCore import Qt
-
-from PyQt5.QtGui import QFont, QDoubleValidator
-
+from qtpy.QtGui import (
+    QFont, 
+    QDoubleValidator
+)
 import napari
 from napari.utils.notifications import show_info
 from napari.utils import progress
-
 import tifffile
 import numpy as np
 import math
@@ -18,12 +30,12 @@ import os
 import re
 import random
 import cv2
-
 from microglia_analyzer import TIFF_REGEX
 from microglia_analyzer.tiles.tiler import ImageTiler2D
-from microglia_analyzer.tiles.recalibrate import (recalibrate_shape, 
-                                                  recalibrate_image, 
-                                                  process_factor)
+from microglia_analyzer.tiles.recalibrate import (
+    recalibrate_image, 
+    process_factor
+)
 
 _DEFAULT_PATCH_SIZE = 512
 _DEFAULT_OVERLAP    = 128

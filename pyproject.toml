@@ -32,7 +32,7 @@ dependencies = [
     "pint",
     "tifffile",
     "torch",
-    "tensorflow==2.16.1",
+    "tensorflow",
     "skan",
     "ultralytics",
     "yolov5"

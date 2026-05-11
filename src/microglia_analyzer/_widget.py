@@ -1,18 +1,37 @@
-from qtpy.QtWidgets import (QWidget    , QVBoxLayout, QGroupBox  , QListWidgetItem,
-                            QSpinBox   , QHBoxLayout, QPushButton, QListWidget    ,
-                            QFileDialog, QComboBox  , QLabel     , QApplication   ,
-                            QSlider    , QSpinBox   , QLineEdit  , QCheckBox      )
-
-from qtpy.QtCore import QThread, Qt
-
-
-from PyQt5.QtGui import QFont, QDoubleValidator, QColor
-from PyQt5.QtCore import Qt, QLocale, QSize
-
+from qtpy.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QGroupBox,
+    QListWidgetItem,
+    QSpinBox, 
+    QHBoxLayout, 
+    QPushButton, 
+    QListWidget,
+    QFileDialog, 
+    QComboBox, 
+    QLabel, 
+    QApplication,
+    QSpinBox, 
+    QLineEdit, 
+    QCheckBox
+)
+from qtpy.QtCore import (
+    QThread, 
+    Qt,
+    QLocale,
+    QSize
+)
+from qtpy.QtGui import (
+    QFont, 
+    QDoubleValidator, 
+    QColor
+)
 import napari
-from napari.utils.notifications import show_info, show_warning
+from napari.utils.notifications import (
+    show_info, 
+    show_warning
+)
 from napari.utils import progress
-
 import tifffile
 import cv2
 import numpy as np
@@ -20,14 +39,22 @@ import os
 import json
 import warnings
 import shutil
-
-from microglia_analyzer import __release__, __version__
-from microglia_analyzer.utils import (get_all_tiff_files, 
-                                      bindings_as_napari_shapes, 
-                                      BBOX_COLORS)
+from microglia_analyzer import (
+    __release__, 
+    __version__
+)
+from microglia_analyzer.utils import (
+    get_all_tiff_files, 
+    bindings_as_napari_shapes, 
+    BBOX_COLORS
+)
 from microglia_analyzer.ma_worker import MicrogliaAnalyzer
-from microglia_analyzer.qt_workers import (QtSegmentMicroglia, QtClassifyMicroglia,
-                                          QtMeasureMicroglia, QtBatchRunners)
+from microglia_analyzer.qt_workers import (
+    QtSegmentMicroglia, 
+    QtClassifyMicroglia,
+    QtMeasureMicroglia, 
+    QtBatchRunners
+)
 
 _IMAGE_LAYER_NAME          = "µ-Image"
 _SEGMENTATION_LAYER_NAME   = "µ-Segmentation"
