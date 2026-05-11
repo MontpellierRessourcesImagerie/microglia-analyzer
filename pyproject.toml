@@ -5,8 +5,7 @@ description = "A Napari plugin allowing to detect and segment microglia on fluor
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
-  {name = "Clément H. BENEDETTI"},
-  {email = "clement.benedetti@mri.cnrs.fr"},
+  {name = "Clément H. BENEDETTI", email = "clement.benedetti@mri.cnrs.fr"},
 ]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
@@ -47,16 +46,8 @@ testing = [
     "pytest-cov",
     "pytest-qt",
     "napari",
-    "pyqt5",
-    "numpy",
+    "pyqt6",
     "qtpy",
-    "scikit-image",
-    "opencv-python-headless",
-    "pint",
-    "tifffile",
-    "torch",
-    "tensorflow==2.16.1",
-    "skan",
     "sphinx_rtd_theme",
     "myst_parser",
     "sphinx_tabs"
