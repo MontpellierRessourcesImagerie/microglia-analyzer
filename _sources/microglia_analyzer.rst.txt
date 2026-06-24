@@ -1,0 +1,31 @@
+microglia\_analyzer package
+===========================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   microglia_analyzer.tiles
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   microglia_analyzer.custom_loss
+   microglia_analyzer.ma_worker
+   microglia_analyzer.qt_workers
+   microglia_analyzer.rename-files
+   microglia_analyzer.unet_worker
+   microglia_analyzer.utils
+
+Module contents
+---------------
+
+.. automodule:: microglia_analyzer
+   :members:
+   :undoc-members:
+   :show-inheritance:
