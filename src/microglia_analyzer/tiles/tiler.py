@@ -63,7 +63,7 @@ def normalize(image, lower_bound=0.0, upper_bound=1.0, dtype=np.float32):
 class ImageTiler2D(object):
 
     def __init__(self, patch_size, overlap, shape, blending='gradient'):
-        if len(shape) != 2:
+        if len(shape) != 2 and (not len(shape)==3 and shape[-1]==3):
             raise ValueError("This class is only suitable for 2D images.")
         if (shape[0] < patch_size) or (shape[1] < patch_size):
             raise ValueError("The input image must be at least as large as a patch.")
@@ -109,7 +109,7 @@ class ImageTiler2D(object):
             patches: (list) List of patches (np.ndarray) cut from the image.
         """
         tgt_shape = image.shape[:2]
-        if tgt_shape != self.shape:
+        if tgt_shape != self.shape[:2]:
             raise ValueError("Image's shape does not match the expected shape.")
         if use_normalize:
             image = normalize(image, lower_bound, upper_bound, dtype)
@@ -182,7 +182,7 @@ class ImageTiler2D(object):
         """
         Processes the final number of tiles on each axis, taking into account the overlap.
         """
-        height, width = self.shape
+        height, width = self.shape[:2]
         self.grid_size = (
             math.ceil((height - self.overlap) / self.step),
             math.ceil((width - self.overlap) / self.step)

@@ -52,7 +52,7 @@ class Patch2D(object):
         On both axes, the lower coordinate is included, while the upper one is excluded.
         It implies that the last patch will contain indices corresponding to the shape of the image.
         """
-        height, width = self.shape
+        height, width = self.shape[:2]
         y, x = self.indices[0] * self.step, self.indices[1] * self.step
         lower_right = (
             min(y + self.patch_size, height), 
